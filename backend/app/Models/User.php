@@ -22,4 +22,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Role::class, 'usuario_roles', 'user_id', 'role_id');
     }
+    public function conductor(){
+        return $this->hasOne(Conductor::class); //se agregan estas lineas para incluir la relacion conductor
+    }
 }
