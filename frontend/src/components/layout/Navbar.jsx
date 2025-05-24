@@ -25,29 +25,31 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-blue-600 text-white p-4">
-      <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold">
-          S.A.R.A.
-        </Link>
-        <div className="flex items-center space-x-4">
-          {user ? (
-            <>
-              <span className="capitalize">{user.name} ({user.user_type})</span>
-              <Button variant="secondary" onClick={handleLogout}>
-                Cerrar Sesión
-              </Button>
-            </>
-          ) : (
-            <>
-              <Link to="/login">
-                <Button variant="secondary">Iniciar Sesión</Button>
-              </Link>
-              <Link to="/register">
-                <Button>Registrarse</Button>
-              </Link>
-            </>
-          )}
+    <nav className="bg-primary text-white p-4 shadow-md">
+      <div className="container-center">
+        <div className="flex justify-between items-center w-full max-w-7xl">
+          <Link to="/" className="text-2xl font-bold">
+            S.A.R.A.
+          </Link>
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <>
+                <span className="capitalize">{user.name} ({user.user_type})</span>
+                <Button variant="secondary" onClick={handleLogout}>
+                  Cerrar Sesión
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="secondary">Iniciar Sesión</Button>
+                </Link>
+                <Link to="/register">
+                  <Button>Registrarse</Button>
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </nav>

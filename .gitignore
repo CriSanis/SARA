@@ -1,39 +1,32 @@
-# -------------------------------
-# Backend (Laravel/PHP)
-# -------------------------------
+# Archivos y carpetas de Laravel
 /vendor/
 /node_modules/
+/.env
 /storage/*.key
-/bootstrap/compiled.php
 /public/storage
 /public/hot
-/public_html/storage
-/public_html/hot
-/.vagrant
-.phpunit.result.cache
-.env
-.env.backup
-.env.production
-Homestead.yaml
-Homestead.json
-.phpactor.json
-auth.json
+/public/.htaccess
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+/.phpunit.result.cache
+/Homestead.json
+/Homestead.yaml
+/npm-debug.log
+/yarn-error.log
+/composer.lock
+/package-lock.json
 
-# -------------------------------
-# Frontend (React/Vite/Tailwind)
-# -------------------------------
-/frontend/node_modules
-/frontend/dist
-/frontend/.env
-/frontend/*.log
-
-# -------------------------------
-# Global (para todo el repositorio)
-# -------------------------------
+# Archivos de caché y logs
 *.log
-npm-debug.log*
-yarn-error.log*
+*.cache
+/storage/logs/*
+!/storage/logs/.gitignore
+
+# Archivos generados por el sistema operativo
 .DS_Store
-.idea
-.vscode/*
-!.vscode/extensions.json
+Thumbs.db
+
+# Archivos de pruebas y entorno local
+/.vscode/
+/.idea/
+/coverage/

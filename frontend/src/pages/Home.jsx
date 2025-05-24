@@ -8,22 +8,20 @@ const Home = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow bg-gray-100">
-        <div className="container mx-auto py-12 text-center">
-          <h1 className="text-5xl font-bold text-blue-600 mb-6">
-            Bienvenido a S.A.R.A.
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Sistema Ágil de Rutas y Asignaciones para transporte y mudanzas en El Alto, Bolivia.
-          </p>
-          <div className="space-x-4">
-            <Link to="/register">
-              <Button>Comenzar Ahora</Button>
-            </Link>
-            <Link to="/login">
-              <Button variant="secondary">Iniciar Sesión</Button>
-            </Link>
-          </div>
+      <main className="flex-grow container-center bg-background-light">
+        <h1 className="text-5xl font-bold mb-6">
+          Bienvenido a S.A.R.A.
+        </h1>
+        <p className="text-xl text-text-light mb-8 max-w-2xl">
+          Sistema Ágil de Rutas y Asignaciones para transporte y mudanzas en El Alto, Bolivia.
+        </p>
+        <div className="space-x-4">
+          <Link to="/register">
+            <Button>Comenzar Ahora</Button>
+          </Link>
+          <Link to="/login">
+            <Button variant="secondary">Iniciar Sesión</Button>
+          </Link>
         </div>
       </main>
       <Footer />

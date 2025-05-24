@@ -22,7 +22,7 @@ const Register = () => {
     try {
       const response = await register(formData);
       localStorage.setItem('token', response.data.token);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError('Error al registrarse. Verifica los datos.');
     }
@@ -35,77 +35,77 @@ const Register = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-          <h2 className="text-2xl font-bold text-blue-600 mb-6">Registro</h2>
-          {error && <p className="text-red-500 mb-4">{error}</p>}
+      <main className="flex-grow container-center bg-background-light">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+          <h2 className="text-2xl font-bold mb-6">Registro</h2>
+          {error && <p className="error-message">{error}</p>}
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label className="block text-gray-700">Nombre</label>
+              <label className="block text-text-light mb-1">Nombre</label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full"
                 placeholder="Tu nombre"
                 required
               />
             </div>
             <div className="mb-4">
-              <label className="block text-gray-700">Email</label>
+              <label className="block text-text-light mb-1">Email</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full"
                 placeholder="tuemail@ejemplo.com"
                 required
               />
             </div>
             <div className="mb-4">
-              <label className="block text-gray-700">Contraseña</label>
+              <label className="block text-text-light mb-1">Contraseña</label>
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full"
                 placeholder="********"
                 required
               />
             </div>
             <div className="mb-4">
-              <label className="block text-gray-700">Confirmar Contraseña</label>
+              <label className="block text-text-light mb-1">Confirmar Contraseña</label>
               <input
                 type="password"
                 name="password_confirmation"
                 value={formData.password_confirmation}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full"
                 placeholder="********"
                 required
               />
             </div>
             <div className="mb-4">
-              <label className="block text-gray-700">Teléfono</label>
+              <label className="block text-text-light mb-1">Teléfono</label>
               <input
                 type="text"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full"
                 placeholder="123456789"
               />
             </div>
             <div className="mb-4">
-              <label className="block text-gray-700">Tipo de Usuario</label>
+              <label className="block text-text-light mb-1">Tipo de Usuario</label>
               <select
                 name="user_type"
                 value={formData.user_type}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full"
               >
                 <option value="client">Cliente</option>
                 <option value="driver">Conductor</option>
