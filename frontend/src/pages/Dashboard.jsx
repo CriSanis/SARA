@@ -4,6 +4,7 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import Card from '../components/common/Card';
 import { getUser } from '../services/auth';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
@@ -15,13 +16,13 @@ const Dashboard = () => {
       navigate('/login');
       return;
     }
-    getUser(token)
-      .then((response) => setUser(response.data))
-      .catch(() => {
+    getUser(token).then((response) => {
+        setUser(response.data);
+      }).catch(() => {
         localStorage.removeItem('token');
         navigate('/login');
       });
-  }, [navigate]);
+    }, [navigate]);
 
   if (!user) return null;
 
@@ -51,10 +52,10 @@ const Dashboard = () => {
           )}
           {user.user_type === 'admin' && (
             <Card title="Panel de Administración">
-              <p className="text-text-light">Gestiona usuarios, pedidos y conductores.</p>
-              <button className="mt-4 text-primary hover:underline">
-                Ir al Panel
-              </button>
+              <p className="text-text-light">Gestiona usuarios, conductores y asociaciones.</p>
+              <Link to="/admin/users" className="mt-4 text-primary hover:underline block">
+                Gestionar Usuarios
+              </Link>
             </Card>
           )}
         </div>

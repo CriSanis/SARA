@@ -6,12 +6,23 @@
 /* Estilos base para el proyecto S.A.R.A. */
 :root {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  line-height: 1.5;
+  line-height: 1.6;
   font-weight: 400;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Variables de color personalizadas */
+  --primary: #2563eb;
+  --primary-hover: #3b82f6;
+  --secondary: #6b7280;
+  --secondary-hover: #9ca3af;
+  --background-light: #f9fafb;
+  --background-dark: #1f2937;
+  --text-light: #111827;
+  --text-dark: #e5e7eb;
+  --error: #dc2626;
 
   /* Esquema de colores para modo claro y oscuro */
   color-scheme: light dark;
@@ -22,8 +33,7 @@ body {
   margin: 0;
   padding: 0;
   width: 100vw;
-  height: 100vh;
-  overflow: hidden; /* Evita el scroll no deseado */
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   @apply bg-background-light text-text-light;
@@ -39,61 +49,112 @@ body {
 
 /* Estilos para enlaces */
 a {
-  @apply font-medium text-secondary no-underline transition-colors;
+  @apply font-medium text-primary no-underline transition-colors duration-200;
 }
 
 a:hover {
-  @apply text-secondary-hover;
+  @apply text-primary-hover underline;
 }
 
 /* Estilos para encabezados */
 h1 {
-  @apply text-3xl md:text-4xl font-bold text-primary leading-tight;
+  @apply text-3xl md:text-4xl font-bold text-primary leading-tight tracking-tight;
 }
 
 h2 {
-  @apply text-2xl font-semibold text-text-light;
+  @apply text-xl md:text-2xl font-semibold text-text-light;
+}
+
+h3 {
+  @apply text-lg font-medium text-text-light;
 }
 
 /* Estilos para botones */
 button {
-  @apply rounded-lg border border-transparent px-4 py-2 text-base font-medium cursor-pointer transition-all;
+  @apply rounded-lg border border-transparent px-4 py-2 text-sm font-medium cursor-pointer transition-all duration-200 ease-in-out;
 }
 
 button:hover {
-  @apply border-primary;
+  @apply border-primary bg-primary/10;
 }
 
 button:focus,
 button:focus-visible {
-  @apply outline-none ring-2 ring-primary;
+  @apply outline-none ring-2 ring-primary ring-offset-2;
+}
+
+button:disabled {
+  @apply opacity-50 cursor-not-allowed;
 }
 
 /* Estilos personalizados con Tailwind para componentes */
 @layer components {
   .btn-primary {
-    @apply bg-primary text-white hover:bg-primary-hover focus:ring-2 focus:ring-primary;
+    @apply bg-primary text-white hover:bg-primary-hover focus:ring-2 focus:ring-primary ring-offset-2 shadow-sm;
   }
   .btn-secondary {
-    @apply bg-secondary text-white hover:bg-secondary-hover focus:ring-2 focus:ring-secondary;
+    @apply bg-secondary text-white hover:bg-secondary-hover focus:ring-2 focus:ring-secondary ring-offset-2 shadow-sm;
   }
   .btn-danger {
-    @apply bg-error text-white hover:bg-red-500 focus:ring-2 focus:ring-error;
+    @apply bg-error text-white hover:bg-red-700 focus:ring-2 focus:ring-error ring-offset-2 shadow-sm;
+  }
+  .btn-outline {
+    @apply border border-primary text-primary hover:bg-primary hover:text-white focus:ring-2 focus:ring-primary;
   }
   .card {
-    @apply bg-white rounded-lg shadow-md p-6 transition-shadow hover:shadow-lg;
+    @apply bg-white rounded-xl shadow-sm p-6 transition-shadow duration-200 hover:shadow-md border border-gray-100;
   }
   .container-center {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center;
+    @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col;
   }
   .error-message {
-    @apply text-error text-sm mt-1;
+    @apply text-error text-xs mt-1 flex items-center;
+  }
+  .input-group {
+    @apply flex flex-col space-y-1;
+  }
+  .input-label {
+    @apply text-sm font-medium text-text-light;
   }
 }
 
 /* Estilos para formularios */
-input, select {
-  @apply w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-colors bg-white;
+input, select, textarea {
+  @apply w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors duration-150 bg-white text-text-light;
+}
+
+input:disabled, select:disabled, textarea:disabled {
+  @apply bg-gray-100 cursor-not-allowed;
+}
+
+input::placeholder, textarea::placeholder {
+  @apply text-gray-400;
+}
+
+/* Estilos para tablas */
+table {
+  @apply min-w-full divide-y divide-gray-200;
+}
+
+th {
+  @apply px-6 py-3 text-left text-xs font-medium text-text-light uppercase tracking-wider;
+}
+
+td {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-text-light;
+}
+
+/* Estilos para notificaciones */
+.alert {
+  @apply p-4 rounded-lg flex items-center space-x-2;
+}
+
+.alert-error {
+  @apply bg-red-50 text-red-700 border border-red-200;
+}
+
+.alert-success {
+  @apply bg-green-50 text-green-700 border border-green-200;
 }
 
 /* Modo oscuro */
@@ -101,32 +162,65 @@ input, select {
   body {
     @apply bg-background-dark text-text-dark;
   }
+  a {
+    @apply text-primary-hover;
+  }
   a:hover {
-    @apply text-secondary-hover;
+    @apply text-primary;
   }
-  button {
-    @apply bg-background-dark text-text-dark;
-  }
-  h1, h2 {
+  h1, h2, h3 {
     @apply text-text-dark;
   }
-  input, select {
-    @apply bg-gray-800 border-gray-700 text-text-dark;
+  button {
+    @apply bg-background-dark/50 text-text-dark;
+  }
+  input, select, textarea {
+    @apply bg-gray-800 border-gray-600 text-text-dark;
+  }
+  .card {
+    @apply bg-gray-800 border-gray-700;
+  }
+  table {
+    @apply divide-gray-600;
+  }
+  th, td {
+    @apply text-text-dark;
+  }
+  .alert-error {
+    @apply bg-red-900/20 text-red-300 border-red-800/50;
+  }
+  .alert-success {
+    @apply bg-green-900/20 text-green-300 border-green-800/50;
   }
 }
 
 /* Ajustes responsivos */
 @media (max-width: 640px) {
   body {
-    overflow-y: auto; /* Permitir scroll en móviles si es necesario */
+    overflow-y: auto;
   }
   h1 {
     @apply text-2xl;
   }
   h2 {
-    @apply text-xl;
+    @apply text-lg;
+  }
+  h3 {
+    @apply text-base;
   }
   button {
-    @apply px-3 py-1 text-sm;
+    @apply px-3 py-1.5 text-sm;
+  }
+  .container-center {
+    @apply px-3;
+  }
+  table {
+    @apply block overflow-x-auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .btn-primary, .btn-secondary, .btn-danger, .btn-outline {
+    @apply w-full text-center;
   }
 }
