@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\User;
-use App\Models\Role;
+use Spatie\Permission\Models\Role;
 
 class AuthTest extends TestCase
 {
@@ -43,7 +43,7 @@ class AuthTest extends TestCase
         ]);
 
         $user = User::where('email', 'juan@example.com')->first();
-        $this->assertTrue($user->roles()->where('name', 'client')->exists());
+        $this->assertTrue($user->hasRole('client'));
     }
 
     /** @test */
@@ -71,9 +71,7 @@ class AuthTest extends TestCase
             'password' => bcrypt('password123'),
             'user_type' => 'client',
         ]);
-
-        $role = Role::where('name', 'client')->first();
-        $user->roles()->attach($role);
+        $user->assignRole('client');
 
         $data = [
             'email' => 'juan@example.com',
@@ -107,6 +105,7 @@ class AuthTest extends TestCase
     public function it_can_logout_a_user()
     {
         $user = User::factory()->create();
+        $user->assignRole('client');
         $token = $user->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
@@ -115,5 +114,20 @@ class AuthTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson(['message' => 'Sesión cerrada']);
+    }
+
+    /** @test */
+    public function it_can_access_user_endpoint_with_role()
+    {
+        $user = User::factory()->create();
+        $user->assignRole('client');
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+        ])->getJson('/api/user');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure(['id', 'name', 'email', 'user_type']);
     }
 }

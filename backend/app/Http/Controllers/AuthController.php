@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Spatie\Permission\Models\Role;
 
 /**
  * @OA\Info(
@@ -17,26 +17,14 @@ use Illuminate\Support\Facades\Auth;
  *         email="support@sara.com"
  *     )
  * )
- * @OA\Server(
- *     url="http://localhost:8000",
- *     description="Servidor local"
- * )
- * @OA\SecurityScheme(
- *     securityScheme="sanctum",
- *     type="http",
- *     scheme="bearer",
- *     bearerFormat="JWT"
- * )
  */
 class AuthController extends Controller
 {
     /**
      * @OA\Post(
      *     path="/api/register",
-     *     operationId="registerUser",
-     *     tags={"Autenticación"},
      *     summary="Registrar un nuevo usuario",
-     *     description="Crea un nuevo usuario y asigna un rol",
+     *     tags={"Autenticación"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -59,10 +47,7 @@ class AuthController extends Controller
      *     ),
      *     @OA\Response(
      *         response=422,
-     *         description="Datos inválidos",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="The email has already been taken.")
-     *         )
+     *         description="Datos inválidos"
      *     )
      * )
      */
@@ -75,41 +60,39 @@ class AuthController extends Controller
             'phone' => 'nullable|string|max:20',
             'user_type' => 'required|in:client,driver,admin',
         ]);
-    
-        try {
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'phone' => $request->phone,
-                'user_type' => $request->user_type,
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'phone' => $request->phone,
+            'user_type' => $request->user_type,
+        ]);
+
+        // Asignar rol con Spatie
+        $user->assignRole($request->user_type);
+
+        // Crear conductor si es necesario
+        if ($request->user_type === 'driver') {
+            $user->conductor()->create([
+                'licencia' => $request->licencia ?? 'TEMP-' . strtoupper(uniqid()),
+                'estado_verificacion' => 'pendiente',
             ]);
-    
-            // Buscar el rol por nombre
-            $role = Role::where('name', $request->user_type)->firstOrFail();
-            // Asignar el rol al usuario
-            $user->roles()->attach($role->id);
-    
-            $token = $user->createToken('auth_token')->plainTextToken;
-    
-            return response()->json([
-                'user' => $user,
-                'token' => $token,
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Error al registrar el usuario: ' . $e->getMessage(),
-            ], 500);
         }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+        ], 201);
     }
 
     /**
      * @OA\Post(
      *     path="/api/login",
-     *     operationId="loginUser",
-     *     tags={"Autenticación"},
      *     summary="Iniciar sesión",
-     *     description="Autentica a un usuario y devuelve un token",
+     *     tags={"Autenticación"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -128,10 +111,7 @@ class AuthController extends Controller
      *     ),
      *     @OA\Response(
      *         response=401,
-     *         description="Credenciales inválidas",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Credenciales inválidas")
-     *         )
+     *         description="Credenciales inválidas"
      *     )
      * )
      */
@@ -141,47 +121,31 @@ class AuthController extends Controller
             'email' => 'required|string|email',
             'password' => 'required|string',
         ]);
-    
+
         if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json(['message' => 'Credenciales inválidas'], 401);
         }
-    
-        $user = User::where('email', $request->email)->first();
-        
-        // SOLUCIÓN PARA LARAVEL 11: ESTO SE MODIFICO
+
+        $user = Auth::user();
         $token = $user->createToken('auth_token')->plainTextToken;
-    
+
         return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'user_type' => $user->user_type
-            ],
-            'token' => $token
+            'user' => $user,
+            'token' => $token,
         ]);
-    } 
+    }
 
     /**
      * @OA\Post(
      *     path="/api/logout",
-     *     operationId="logoutUser",
-     *     tags={"Autenticación"},
      *     summary="Cerrar sesión",
-     *     description="Elimina el token de autenticación del usuario",
+     *     tags={"Autenticación"},
      *     security={{"sanctum":{}}},
      *     @OA\Response(
      *         response=200,
      *         description="Sesión cerrada",
      *         @OA\JsonContent(
      *             @OA\Property(property="message", type="string", example="Sesión cerrada")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="No autorizado",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Unauthenticated")
      *         )
      *     )
      * )
@@ -191,5 +155,28 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Sesión cerrada']);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/user",
+     *     summary="Obtener usuario autenticado",
+     *     tags={"Autenticación"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Usuario autenticado",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="id", type="integer"),
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="email", type="string"),
+     *             @OA\Property(property="user_type", type="string")
+     *         )
+     *     )
+     * )
+     */
+    public function user(Request $request)
+    {
+        return $request->user();
     }
 }
