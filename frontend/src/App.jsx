@@ -8,6 +8,7 @@ import UserManagement from './pages/admin/UserManagement';
 import ConductorManagement from './pages/admin/ConductorManagement';
 import AsociacionManagement from './pages/admin/AsociacionManagement';
 import PedidoManagement from './pages/PedidoManagement';
+import RutaManagement from './pages/admin/RutaManagement';
 import './index.css';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
         <Route path="/admin/users" element={<UserManagement />} />
         <Route path="/admin/conductores" element={<ConductorManagement />} />
         <Route path="/admin/asociaciones" element={<AsociacionManagement />} />
+        <Route path="/admin/rutas" element={<RutaManagement />} />
         <Route path="/pedidos" element={<PedidoManagement />} />
       </Routes>
     </Router>

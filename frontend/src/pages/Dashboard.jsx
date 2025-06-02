@@ -52,7 +52,7 @@ const Dashboard = () => {
           )}
           {user.user_type === 'admin' && (
             <Card title="Panel de Administración">
-              <p className="text-text-light">Gestiona usuarios, conductores, asociaciones y pedidos.</p>
+              <p className="text-text-light">Gestiona usuarios, conductores, asociaciones, pedidos y rutas.</p>
               <Link to="/admin/users" className="mt-4 text-primary hover:underline block">
                 Gestionar Usuarios
               </Link>
@@ -64,6 +64,9 @@ const Dashboard = () => {
               </Link>
               <Link to="/pedidos" className="mt-2 text-primary hover:underline block">
                 Gestionar Pedidos
+              </Link>
+              <Link to="/admin/rutas" className="mt-2 text-primary hover:underline block">
+                Gestionar Rutas
               </Link>
             </Card>
           )}
