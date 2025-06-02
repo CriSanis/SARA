@@ -8,12 +8,12 @@ use App\Models\Vehiculo;
 use App\Models\Asociacion;
 use App\Models\AsociacionConductor;
 use App\Models\User;
+use App\Models\Pedido;
 
 class TransporteSeeder extends Seeder
 {
     public function run(): void
     {
-        // Crear usuarios con roles
         $admin = User::factory()->create([
             'name' => 'Admin',
             'email' => 'admin@sara.com',
@@ -28,19 +28,19 @@ class TransporteSeeder extends Seeder
         ]);
         $client->assignRole('client');
 
-        // Crear 2 asociaciones (reducido de 5)
-        $asociaciones = Asociacion::factory()->count(2)->create();
+        $asociaciones = Asociacion::factory()->count(5)->create();
 
-        // Crear 3 conductores con usuarios (reducido de 10)
-        $conductores = Conductor::factory()->count(3)->create();
+        $conductores = Conductor::factory()->count(10)->create();
 
         foreach ($conductores as $conductor) {
             $conductor->user->assignRole('driver');
-            Vehiculo::factory()->count(1)->create(['conductor_id' => $conductor->id]);
+            Vehiculo::factory()->create(['conductor_id' => $conductor->id]);
             AsociacionConductor::factory()->create([
                 'conductor_id' => $conductor->id,
                 'asociacion_id' => $asociaciones->random()->id,
             ]);
         }
+
+        Pedido::factory()->count(10)->create(['cliente_id' => $client->id]);
     }
 }

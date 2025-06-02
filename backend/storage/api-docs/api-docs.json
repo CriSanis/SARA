@@ -608,6 +608,368 @@
                 ]
             }
         },
+        "/api/pedidos": {
+            "get": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Listar pedidos",
+                "operationId": "9368500233e75a120cb606e08d7a06e4",
+                "responses": {
+                    "200": {
+                        "description": "Lista de pedidos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer"
+                                            },
+                                            "cliente_id": {
+                                                "type": "integer"
+                                            },
+                                            "conductor_id": {
+                                                "type": "integer",
+                                                "nullable": true
+                                            },
+                                            "origen": {
+                                                "type": "string"
+                                            },
+                                            "destino": {
+                                                "type": "string"
+                                            },
+                                            "descripcion_carga": {
+                                                "type": "string"
+                                            },
+                                            "peso": {
+                                                "type": "number"
+                                            },
+                                            "estado": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Crear un nuevo pedido",
+                "operationId": "acf9c44ffbceb280fd290ecbb5f5f3f3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "origen",
+                                    "destino",
+                                    "descripcion_carga",
+                                    "peso"
+                                ],
+                                "properties": {
+                                    "origen": {
+                                        "type": "string",
+                                        "example": "Bogotá"
+                                    },
+                                    "destino": {
+                                        "type": "string",
+                                        "example": "Medellín"
+                                    },
+                                    "descripcion_carga": {
+                                        "type": "string",
+                                        "example": "Material de construcción"
+                                    },
+                                    "peso": {
+                                        "type": "number",
+                                        "example": 2.5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Pedido creado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "cliente_id": {
+                                            "type": "integer"
+                                        },
+                                        "origen": {
+                                            "type": "string"
+                                        },
+                                        "destino": {
+                                            "type": "string"
+                                        },
+                                        "descripcion_carga": {
+                                            "type": "string"
+                                        },
+                                        "peso": {
+                                            "type": "number"
+                                        },
+                                        "estado": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Datos inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pedidos/{id}": {
+            "put": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Actualizar un pedido",
+                "operationId": "3da8de6967b1e89d1d5a0cf5988c04e5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "origen",
+                                    "destino",
+                                    "descripcion_carga",
+                                    "peso",
+                                    "estado"
+                                ],
+                                "properties": {
+                                    "origen": {
+                                        "type": "string",
+                                        "example": "Bogotá"
+                                    },
+                                    "destino": {
+                                        "type": "string",
+                                        "example": "Medellín"
+                                    },
+                                    "descripcion_carga": {
+                                        "type": "string",
+                                        "example": "Material actualizado"
+                                    },
+                                    "peso": {
+                                        "type": "number",
+                                        "example": 3
+                                    },
+                                    "estado": {
+                                        "type": "string",
+                                        "enum": [
+                                            "pendiente",
+                                            "asignado",
+                                            "en_progreso",
+                                            "completado",
+                                            "cancelado"
+                                        ],
+                                        "example": "pendiente"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pedido actualizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "cliente_id": {
+                                            "type": "integer"
+                                        },
+                                        "origen": {
+                                            "type": "string"
+                                        },
+                                        "destino": {
+                                            "type": "string"
+                                        },
+                                        "descripcion_carga": {
+                                            "type": "string"
+                                        },
+                                        "peso": {
+                                            "type": "number"
+                                        },
+                                        "estado": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "No autorizado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Eliminar un pedido",
+                "operationId": "c0cc39e3f79740c3fe58d2268a321d0b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Pedido eliminado"
+                    },
+                    "403": {
+                        "description": "No autorizado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pedidos/{id}/asignar": {
+            "post": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Asignar conductor a un pedido",
+                "operationId": "60f7ff50f9d22371a05abdb5576ea1b5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "conductor_id"
+                                ],
+                                "properties": {
+                                    "conductor_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Conductor asignado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "cliente_id": {
+                                            "type": "integer"
+                                        },
+                                        "conductor_id": {
+                                            "type": "integer"
+                                        },
+                                        "origen": {
+                                            "type": "string"
+                                        },
+                                        "destino": {
+                                            "type": "string"
+                                        },
+                                        "descripcion_carga": {
+                                            "type": "string"
+                                        },
+                                        "peso": {
+                                            "type": "number"
+                                        },
+                                        "estado": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "No autorizado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/users": {
             "get": {
                 "tags": [
@@ -1192,6 +1554,10 @@
         {
             "name": "Conductores",
             "description": "Operaciones para gestionar conductores (solo administradores)"
+        },
+        {
+            "name": "Pedidos",
+            "description": "Operaciones para gestionar pedidos de transporte"
         },
         {
             "name": "Usuarios",

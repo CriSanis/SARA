@@ -31,16 +31,15 @@ class VehiculoManagementTest extends TestCase
         $this->conductor = Conductor::factory()->create(['user_id' => $driver->id]);
     }
 
-    /** @test */
-  /** @test */
+     /** @test */
 public function admin_can_list_vehiculos()
 {
     $response = $this->withHeader('Authorization', "Bearer $this->token")
                 ->getJson('/api/vehiculos');
 
     $response->assertStatus(200)
-             ->assertJsonCount(3); // 3 vehículos creados por el seeder
-}
+             ->assertJsonCount(10); // 10 vehículos creados por el seeder
+}   
 
     /** @test */
     public function admin_can_create_vehiculo()

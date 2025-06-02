@@ -25,16 +25,14 @@ class UserManagementTest extends TestCase
     }
 
     /** @test */
-    public function admin_can_list_users()
-    {
-        User::factory()->count(2)->create(); // Crear 2 usuarios adicionales
+public function admin_can_list_users()
+{
+    $response = $this->withHeader('Authorization', "Bearer $this->token")
+                ->getJson('/api/users');
 
-        $response = $this->withHeader('Authorization', "Bearer $this->token")
-                    ->getJson('/api/users');
-
-        $response->assertStatus(200)
-                ->assertJsonCount(8); // 1 admin (seeder) + 1 cliente (seeder) + 3 conductores (seeder) + 1 admin (setUp) + 2 adicionales
-    }
+    $response->assertStatus(200)
+             ->assertJsonCount(23); // 1 admin (seeder) + 1 cliente (seeder) + 10 conductores (seeder) + 1 admin (setUp) + 10 clientes (pedidos)
+}
 
     /** @test */
     public function admin_can_create_user()
