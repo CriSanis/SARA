@@ -27,4 +27,8 @@ class Conductor extends Model
     {
         return $this->belongsToMany(Asociacion::class, 'asociacion_conductores', 'conductor_id', 'asociacion_id');
     }
+    public function pedidos()
+    {
+        return $this->hasMany(Pedido::class, 'conductor_id');
+    }
 }
