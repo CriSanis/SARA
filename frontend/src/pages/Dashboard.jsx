@@ -16,13 +16,13 @@ const Dashboard = () => {
       navigate('/login');
       return;
     }
-    getUser(token).then((response) => {
-        setUser(response.data);
-      }).catch(() => {
+    getUser(token)
+      .then((response) => setUser(response.data))
+      .catch(() => {
         localStorage.removeItem('token');
         navigate('/login');
       });
-    }, [navigate]);
+  }, [navigate]);
 
   if (!user) return null;
 
@@ -51,12 +51,17 @@ const Dashboard = () => {
             </Card>
           )}
           {user.user_type === 'admin' && (
-            <Card title="Panel de Administración">
-              <p className="text-text-light">Gestiona usuarios, conductores y asociaciones.</p>
-              <Link to="/admin/users" className="mt-4 text-primary hover:underline block">
-                Gestionar Usuarios
-              </Link>
-            </Card>
+            <>
+              <Card title="Panel de Administración">
+                <p className="text-text-light">Gestiona usuarios, conductores y asociaciones.</p>
+                <Link to="/admin/users" className="mt-4 text-primary hover:underline block">
+                  Gestionar Usuarios
+                </Link>
+                <Link to="/admin/conductores" className="mt-2 text-primary hover:underline block">
+                  Gestionar Conductores
+                </Link>
+              </Card>
+            </>
           )}
         </div>
       </main>
