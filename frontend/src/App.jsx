@@ -9,6 +9,7 @@ import ConductorManagement from './pages/admin/ConductorManagement';
 import AsociacionManagement from './pages/admin/AsociacionManagement';
 import PedidoManagement from './pages/PedidoManagement';
 import RutaManagement from './pages/admin/RutaManagement';
+import ReporteManagement from './pages/admin/ReporteManagement';
 import './index.css';
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
         <Route path="/admin/conductores" element={<ConductorManagement />} />
         <Route path="/admin/asociaciones" element={<AsociacionManagement />} />
         <Route path="/admin/rutas" element={<RutaManagement />} />
+        <Route path="/admin/reportes" element={<ReporteManagement />} />
         <Route path="/pedidos" element={<PedidoManagement />} />
       </Routes>
     </Router>
