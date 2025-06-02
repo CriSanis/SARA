@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/admin/UserManagement';
 import ConductorManagement from './pages/admin/ConductorManagement';
 import AsociacionManagement from './pages/admin/AsociacionManagement';
+import PedidoManagement from './pages/PedidoManagement';
 import './index.css';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/admin/users" element={<UserManagement />} />
         <Route path="/admin/conductores" element={<ConductorManagement />} />
         <Route path="/admin/asociaciones" element={<AsociacionManagement />} />
+        <Route path="/pedidos" element={<PedidoManagement />} />
       </Routes>
     </Router>
   );

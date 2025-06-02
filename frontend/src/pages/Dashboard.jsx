@@ -37,22 +37,22 @@ const Dashboard = () => {
           {user.user_type === 'client' && (
             <Card title="Mis Pedidos">
               <p className="text-text-light">Consulta el estado de tus pedidos de transporte.</p>
-              <button className="mt-4 text-primary hover:underline">
-                Ver Pedidos
-              </button>
+              <Link to="/pedidos" className="mt-4 text-primary hover:underline block">
+                Gestionar Pedidos
+              </Link>
             </Card>
           )}
           {user.user_type === 'driver' && (
             <Card title="Asignaciones">
               <p className="text-text-light">Revisa tus asignaciones de transporte.</p>
-              <button className="mt-4 text-primary hover:underline">
-                Ver Asignaciones
-              </button>
+              <Link to="/pedidos" className="mt-4 text-primary hover:underline block">
+                Ver Pedidos
+              </Link>
             </Card>
           )}
           {user.user_type === 'admin' && (
             <Card title="Panel de Administración">
-              <p className="text-text-light">Gestiona usuarios, conductores y asociaciones.</p>
+              <p className="text-text-light">Gestiona usuarios, conductores, asociaciones y pedidos.</p>
               <Link to="/admin/users" className="mt-4 text-primary hover:underline block">
                 Gestionar Usuarios
               </Link>
@@ -62,9 +62,12 @@ const Dashboard = () => {
               <Link to="/admin/asociaciones" className="mt-2 text-primary hover:underline block">
                 Gestionar Asociaciones
               </Link>
+              <Link to="/pedidos" className="mt-2 text-primary hover:underline block">
+                Gestionar Pedidos
+              </Link>
             </Card>
           )}
-        </div>Ñ
+        </div>
       </main>
       <Footer />
     </div>
