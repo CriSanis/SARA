@@ -7,6 +7,7 @@ use App\Http\Controllers\ConductorController;
 use App\Http\Controllers\VehiculoController;
 use App\Http\Controllers\AsociacionController;
 use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\RutaController;
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {
@@ -31,6 +32,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/asociacion-conductores/{id}', [AsociacionController::class, 'desasignarConductor']);
 
         Route::post('/pedido-conductor', [PedidoController::class, 'asignarConductor']);
+
+        Route::post('/rutas', [RutaController::class, 'store']);
+        Route::put('/rutas/{id}', [RutaController::class, 'update']);
+        Route::delete('/rutas/{id}', [RutaController::class, 'destroy']);
+        Route::post('/pedido-ruta', [RutaController::class, 'asignarRuta']);
+        Route::delete('/pedido-ruta/{id}', [RutaController::class, 'desasignarRuta']);
+    });
+
+    Route::middleware(['role:admin|driver'])->group(function () {
+        Route::get('/rutas', [RutaController::class, 'index']);
     });
 
     Route::middleware(['role:admin|driver|client'])->group(function () {

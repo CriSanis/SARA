@@ -9,6 +9,7 @@ use App\Models\Asociacion;
 use App\Models\AsociacionConductor;
 use App\Models\User;
 use App\Models\Pedido;
+use App\Models\Ruta;
 
 class TransporteSeeder extends Seeder
 {
@@ -41,6 +42,15 @@ class TransporteSeeder extends Seeder
             ]);
         }
 
-        Pedido::factory()->count(10)->create(['cliente_id' => $client->id]);
+        $pedidos = Pedido::factory()->count(10)->create(['cliente_id' => $client->id]);
+
+        $rutas = Ruta::factory()->count(5)->create();
+
+        foreach ($pedidos as $pedido) {
+            $pedido->rutas()->attach($rutas->random()->id, [
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 }

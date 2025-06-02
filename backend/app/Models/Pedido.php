@@ -4,12 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles;
 
 class Pedido extends Model
 {
-    use HasFactory, HasRoles, HasApiTokens;
+    use HasFactory;
 
     protected $fillable = [
         'cliente_id', 'conductor_id', 'origen', 'destino', 'descripcion', 'estado',
@@ -23,5 +21,10 @@ class Pedido extends Model
     public function conductor()
     {
         return $this->belongsTo(Conductor::class, 'conductor_id');
+    }
+
+    public function rutas()
+    {
+        return $this->belongsToMany(Ruta::class, 'pedido_ruta');
     }
 }
