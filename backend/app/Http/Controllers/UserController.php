@@ -40,11 +40,11 @@ class UserController extends Controller
      *     )
      * )
      */
-    public function index()
-    {
-        $users = User::with('roles')->get();
-        return response()->json($users);
-    }
+   public function index()
+{
+    $users = User::with(['roles', 'conductor'])->get(); //se añade conductores
+    return response()->json($users);
+}
 
     /**
      * @OA\Post(

@@ -27,14 +27,13 @@ class UserManagementTest extends TestCase
     /** @test */
     public function admin_can_list_users()
     {
-        // TransporteSeeder crea 12 usuarios (1 admin, 1 cliente, 10 conductores)
-        // setUp crea 1 admin adicional
-        // Total esperado: 13 usuarios
+        User::factory()->count(2)->create(); // Crear 2 usuarios adicionales
+
         $response = $this->withHeader('Authorization', "Bearer $this->token")
                     ->getJson('/api/users');
 
         $response->assertStatus(200)
-                ->assertJsonCount(13); // Ajustado
+                ->assertJsonCount(8); // 1 admin (seeder) + 1 cliente (seeder) + 3 conductores (seeder) + 1 admin (setUp) + 2 adicionales
     }
 
     /** @test */
@@ -72,7 +71,7 @@ class UserManagementTest extends TestCase
                     ->postJson('/api/users', $data);
 
         $response->assertStatus(201);
-        $this->assertDatabaseHas('conductores', ['licencia' => 'XYZ789']); // Corregido
+        $this->assertDatabaseHas('conductores', ['licencia' => 'XYZ789']);
     }
 
     /** @test */
@@ -107,7 +106,7 @@ class UserManagementTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('users', ['email' => 'ana@updated.com']);
-        $this->assertDatabaseHas('conductores', ['licencia' => 'ABC123']); // Corregido
+        $this->assertDatabaseHas('conductores', ['licencia' => 'ABC123']);
     }
 
     /** @test */

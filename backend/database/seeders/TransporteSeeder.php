@@ -28,11 +28,11 @@ class TransporteSeeder extends Seeder
         ]);
         $client->assignRole('client');
 
-        // Crear 5 asociaciones
-        $asociaciones = Asociacion::factory()->count(5)->create();
+        // Crear 2 asociaciones (reducido de 5)
+        $asociaciones = Asociacion::factory()->count(2)->create();
 
-        // Crear 10 conductores con usuarios
-        $conductores = Conductor::factory()->count(10)->create();
+        // Crear 3 conductores con usuarios (reducido de 10)
+        $conductores = Conductor::factory()->count(3)->create();
 
         foreach ($conductores as $conductor) {
             $conductor->user->assignRole('driver');

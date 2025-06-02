@@ -223,6 +223,86 @@
                 ]
             }
         },
+        "/api/conductores/{id}/verificar": {
+            "put": {
+                "tags": [
+                    "Conductores"
+                ],
+                "summary": "Verificar un conductor",
+                "operationId": "a9109cf01f1182db00352ed58741eb02",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "estado_verificacion"
+                                ],
+                                "properties": {
+                                    "estado_verificacion": {
+                                        "type": "string",
+                                        "enum": [
+                                            "pendiente",
+                                            "verificado",
+                                            "rechazado"
+                                        ],
+                                        "example": "verificado"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Conductor verificado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "user_id": {
+                                            "type": "integer"
+                                        },
+                                        "licencia": {
+                                            "type": "string"
+                                        },
+                                        "estado_verificacion": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Conductor no encontrado"
+                    },
+                    "422": {
+                        "description": "Datos inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/users": {
             "get": {
                 "tags": [
@@ -534,12 +614,283 @@
                     }
                 ]
             }
+        },
+        "/api/vehiculos": {
+            "get": {
+                "tags": [
+                    "Vehículos"
+                ],
+                "summary": "Listar todos los vehículos",
+                "operationId": "149b9ba714037a3dc86c8d245646f6fa",
+                "responses": {
+                    "200": {
+                        "description": "Lista de vehículos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer"
+                                            },
+                                            "conductor_id": {
+                                                "type": "integer"
+                                            },
+                                            "marca": {
+                                                "type": "string"
+                                            },
+                                            "modelo": {
+                                                "type": "string"
+                                            },
+                                            "placa": {
+                                                "type": "string"
+                                            },
+                                            "capacidad": {
+                                                "type": "number"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Vehículos"
+                ],
+                "summary": "Crear un nuevo vehículo",
+                "operationId": "04854b3c96cbe81512a35a4340be89d6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "conductor_id",
+                                    "marca",
+                                    "modelo",
+                                    "placa",
+                                    "capacidad"
+                                ],
+                                "properties": {
+                                    "conductor_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "marca": {
+                                        "type": "string",
+                                        "example": "Toyota"
+                                    },
+                                    "modelo": {
+                                        "type": "string",
+                                        "example": "Hilux"
+                                    },
+                                    "placa": {
+                                        "type": "string",
+                                        "example": "ABC-123"
+                                    },
+                                    "capacidad": {
+                                        "type": "number",
+                                        "example": 2.5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Vehículo creado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "conductor_id": {
+                                            "type": "integer"
+                                        },
+                                        "marca": {
+                                            "type": "string"
+                                        },
+                                        "modelo": {
+                                            "type": "string"
+                                        },
+                                        "placa": {
+                                            "type": "string"
+                                        },
+                                        "capacidad": {
+                                            "type": "number"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Datos inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/vehiculos/{id}": {
+            "put": {
+                "tags": [
+                    "Vehículos"
+                ],
+                "summary": "Actualizar un vehículo",
+                "operationId": "8ec2230377ed40f3ce7542ad3163463e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "conductor_id",
+                                    "marca",
+                                    "modelo",
+                                    "placa",
+                                    "capacidad"
+                                ],
+                                "properties": {
+                                    "conductor_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "marca": {
+                                        "type": "string",
+                                        "example": "Toyota"
+                                    },
+                                    "modelo": {
+                                        "type": "string",
+                                        "example": "Hilux"
+                                    },
+                                    "placa": {
+                                        "type": "string",
+                                        "example": "ABC-123"
+                                    },
+                                    "capacidad": {
+                                        "type": "number",
+                                        "example": 2.5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Vehículo actualizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "conductor_id": {
+                                            "type": "integer"
+                                        },
+                                        "marca": {
+                                            "type": "string"
+                                        },
+                                        "modelo": {
+                                            "type": "string"
+                                        },
+                                        "placa": {
+                                            "type": "string"
+                                        },
+                                        "capacidad": {
+                                            "type": "number"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Vehículo no encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Vehículos"
+                ],
+                "summary": "Eliminar un vehículo",
+                "operationId": "76e387e5d46c7b473cd89072b5ac88fe",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Vehículo eliminado"
+                    },
+                    "404": {
+                        "description": "Vehículo no encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "tags": [
         {
+            "name": "Conductores",
+            "description": "Operaciones para gestionar conductores (solo administradores)"
+        },
+        {
             "name": "Usuarios",
             "description": "Operaciones para gestionar usuarios (solo administradores)"
+        },
+        {
+            "name": "Vehículos",
+            "description": "Operaciones para gestionar vehículos (solo administradores)"
         },
         {
             "name": "Autenticación",
