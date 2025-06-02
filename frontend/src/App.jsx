@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/admin/UserManagement';
 import ConductorManagement from './pages/admin/ConductorManagement';
+import AsociacionManagement from './pages/admin/AsociacionManagement';
 import './index.css';
 
 function App() {
@@ -17,7 +18,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin/users" element={<UserManagement />} />
-        <Route path="/admin/conductores" element={<ConductorManagement />} /> 
+        <Route path="/admin/conductores" element={<ConductorManagement />} />
+        <Route path="/admin/asociaciones" element={<AsociacionManagement />} />
       </Routes>
     </Router>
   );
