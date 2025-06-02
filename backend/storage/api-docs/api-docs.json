@@ -9,6 +9,311 @@
         "version": "1.0.0"
     },
     "paths": {
+        "/api/asociaciones": {
+            "get": {
+                "tags": [
+                    "Asociaciones"
+                ],
+                "summary": "Listar todas las asociaciones",
+                "operationId": "401b8e0e9a502aab90246969cd73c3b9",
+                "responses": {
+                    "200": {
+                        "description": "Lista de asociaciones",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer"
+                                            },
+                                            "nombre": {
+                                                "type": "string"
+                                            },
+                                            "descripcion": {
+                                                "type": "string",
+                                                "nullable": true
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Asociaciones"
+                ],
+                "summary": "Crear una nueva asociación",
+                "operationId": "eb105ae4bef76205abf5f581a9f781a9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "nombre"
+                                ],
+                                "properties": {
+                                    "nombre": {
+                                        "type": "string",
+                                        "example": "Asociación Norte"
+                                    },
+                                    "descripcion": {
+                                        "type": "string",
+                                        "example": "Asociación de transporte del norte",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Asociación creada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "nombre": {
+                                            "type": "string"
+                                        },
+                                        "descripcion": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Datos inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/asociaciones/{id}": {
+            "put": {
+                "tags": [
+                    "Asociaciones"
+                ],
+                "summary": "Actualizar una asociación",
+                "operationId": "fc44764d0c94ce531d1ff300e517c345",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "nombre"
+                                ],
+                                "properties": {
+                                    "nombre": {
+                                        "type": "string",
+                                        "example": "Asociación Norte"
+                                    },
+                                    "descripcion": {
+                                        "type": "string",
+                                        "example": "Asociación actualizada",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Asociación actualizada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "nombre": {
+                                            "type": "string"
+                                        },
+                                        "descripcion": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Asociación no encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Asociaciones"
+                ],
+                "summary": "Eliminar una asociación",
+                "operationId": "3e43c9a3774bec39bb503cc9e273f4eb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Asociación eliminada"
+                    },
+                    "404": {
+                        "description": "Asociación no encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/asociacion-conductores": {
+            "post": {
+                "tags": [
+                    "Asociaciones"
+                ],
+                "summary": "Asignar conductor a una asociación",
+                "operationId": "19a32137bd1b2f407a0512b78a5a0840",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "conductor_id",
+                                    "asociacion_id"
+                                ],
+                                "properties": {
+                                    "conductor_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "asociacion_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Conductor asignado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "conductor_id": {
+                                            "type": "integer"
+                                        },
+                                        "asociacion_id": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Datos inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/asociacion-conductores/{id}": {
+            "delete": {
+                "tags": [
+                    "Asociaciones"
+                ],
+                "summary": "Desasignar conductor de una asociación",
+                "operationId": "4a7111813f0005bf943d13767bf29ba0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Conductor desasignado"
+                    },
+                    "404": {
+                        "description": "Asignación no encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/register": {
             "post": {
                 "tags": [
@@ -880,6 +1185,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Asociaciones",
+            "description": "Operaciones para gestionar asociaciones y sus conductores (solo administradores)"
+        },
         {
             "name": "Conductores",
             "description": "Operaciones para gestionar conductores (solo administradores)"
