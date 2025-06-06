@@ -1,32 +1,54 @@
-# Archivos y carpetas de Laravel
-/vendor/
-/node_modules/
-/.env
-/storage/*.key
-/public/storage
-/public/hot
-/public/.htaccess
-/bootstrap/cache/*
-!/bootstrap/cache/.gitignore
-/.phpunit.result.cache
-/Homestead.json
-/Homestead.yaml
-/npm-debug.log
-/yarn-error.log
-/composer.lock
-/package-lock.json
+# Dependencies
+node_modules/
+vendor/
+.pnp
+.pnp.js
 
-# Archivos de caché y logs
+# Testing
+coverage/
+.nyc_output/
+
+# Production
+build/
+dist/
+out/
+
+# Environment files
+
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 *.log
-*.cache
-/storage/logs/*
-!/storage/logs/.gitignore
 
-# Archivos generados por el sistema operativo
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
 .DS_Store
 Thumbs.db
 
-# Archivos de pruebas y entorno local
-/.vscode/
-/.idea/
-/coverage/
+# Laravel specific
+/public/hot
+/public/storage
+/storage/*.key
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+Homestead.json
+Homestead.yaml
+.phpunit.result.cache
+
+# Keep frontend source files
+!frontend/src/
+!frontend/public/
+!frontend/tailwind.config.js
+!frontend/vite.config.js
+!frontend/postcss.config.js
+!frontend/index.html
+!frontend/package.json
