@@ -1,86 +1,146 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
-import Card from '../components/common/Card';
-import Button from '../components/common/Button';
-import { getUser } from '../services/auth';
-import { getPedidos, createPedido, updatePedido, deletePedido, asignarConductor } from '../services/pedido';
-import { getUsers } from '../services/auth';
-import { getRutas } from '../services/ruta';
+import { FaBox, FaTruck, FaUser, FaMapMarkerAlt, FaInfoCircle, FaUserPlus } from 'react-icons/fa';
+import axios from 'axios';
 
 const PedidoManagement = () => {
-  const [pedidos, setPedidos] = useState([]);
-  const [conductores, setConductores] = useState([]);
-  const [rutas, setRutas] = useState([]);
-  const [formData, setFormData] = useState({ origen: '', destino: '', descripcion: '' });
-  const [asignacionForm, setAsignacionForm] = useState({ pedido_id: '', conductor_id: '' });
-  const [editingId, setEditingId] = useState(null);
-  const [error, setError] = useState('');
-  const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const [formData, setFormData] = useState({ origen: '', destino: '', descripcion: '' });
+  const [editingId, setEditingId] = useState(null);
+  const [pedidos, setPedidos] = useState([]);
+  const [conductores, setConductores] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState(null);
+  const [asignacionForm, setAsignacionForm] = useState({
+    pedido_id: '',
+    conductor_id: ''
+  });
 
   useEffect(() => {
-    if (!token) {
-      navigate('/login');
-      return;
+    if (token) {
+      fetchUserRole();
     }
-    getUser(token).then((response) => {
-      setUser(response.data);
+  }, [token]);
+
+  useEffect(() => {
+    if (userRole) {
       fetchPedidos();
-      if (response.data.user_type === 'admin') {
+      if (userRole === 'admin') {
         fetchConductores();
       }
-      if (['driver', 'admin'].includes(response.data.user_type)) {
-        fetchRutas();
-      }
-    }).catch(() => {
-      localStorage.removeItem('token');
-      navigate('/login');
-    });
-  }, [navigate, token]);
+    }
+  }, [userRole]);
 
-  const fetchPedidos = async () => {
+  const fetchUserRole = async () => {
     try {
-      const response = await getPedidos(token);
-      setPedidos(response.data);
+      const response = await axios.get('http://localhost:8000/api/user', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUserRole(response.data.roles[0].name);
     } catch (err) {
-      setError('Error al cargar pedidos');
+      console.error('Error al obtener el rol del usuario:', err);
+      setError('Error al cargar la información del usuario');
     }
   };
 
   const fetchConductores = async () => {
     try {
-      const response = await getUsers(token);
-      const drivers = response.data.filter(user => user.user_type === 'driver');
-      setConductores(drivers);
+      setLoading(true);
+      const response = await axios.get('http://localhost:8000/api/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Filtrar solo los usuarios que son conductores y obtener sus IDs de conductor
+      const conductoresFiltrados = response.data
+        .filter(user => user.roles && user.roles.some(role => role.name === 'driver'))
+        .map(user => ({
+          id: user.conductor?.id, // Usar el ID del conductor, no el ID del usuario
+          name: user.name,
+          user_id: user.id
+        }))
+        .filter(conductor => conductor.id); // Solo incluir conductores con ID válido
+      
+      setConductores(conductoresFiltrados);
+      setError(null);
     } catch (err) {
-      setError('Error al cargar conductores');
+      console.error('Error al cargar conductores:', err);
+      setError('Error al cargar la lista de conductores');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchRutas = async () => {
+  const fetchPedidos = async () => {
     try {
-      const response = await getRutas(token);
-      setRutas(response.data);
+      setLoading(true);
+      const response = await axios.get('http://localhost:8000/api/pedidos', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPedidos(response.data);
+      setError(null);
     } catch (err) {
-      setError('Error al cargar rutas');
+      setError('Error al cargar los pedidos');
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleCreate = async (data) => {
+    try {
+      const response = await axios.post('http://localhost:8000/api/pedidos', data, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPedidos([...pedidos, response.data]);
+      return response.data;
+    } catch (err) {
+      setError('Error al crear el pedido');
+      throw err;
+    }
+  };
+
+  const handleUpdate = async (id, data) => {
+    try {
+      const response = await axios.put(`http://localhost:8000/api/pedidos/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPedidos(pedidos.map(pedido => 
+        pedido.id === id ? response.data : pedido
+      ));
+      return response.data;
+    } catch (err) {
+      setError('Error al actualizar el pedido');
+      throw err;
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8000/api/pedidos/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPedidos(pedidos.filter(pedido => pedido.id !== id));
+    } catch (err) {
+      setError('Error al eliminar el pedido');
+    }
+  };
+
+  if (!token) {
+    navigate('/login');
+    return null;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (editingId) {
-        await updatePedido(token, editingId, formData);
+        await handleUpdate(editingId, formData);
       } else {
-        await createPedido(token, formData);
+        await handleCreate(formData);
       }
       resetForm();
-      fetchPedidos();
     } catch (err) {
-      setError('Error al guardar pedido');
+      console.error(err);
     }
   };
 
@@ -91,37 +151,8 @@ const PedidoManagement = () => {
       destino: pedido.destino,
       descripcion: pedido.descripcion || '',
     });
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Confirmar eliminación?')) {
-      try {
-        await deletePedido(token, id);
-        fetchPedidos();
-      } catch (err) {
-        setError('Error al eliminar pedido');
-      }
-    }
-  };
-
-  const handleEstadoChange = async (id, estado) => {
-    try {
-      await updatePedido(token, id, { estado });
-      fetchPedidos();
-    } catch (err) {
-      setError('Error al actualizar estado');
-    }
-  };
-
-  const handleAsignar = async (e) => {
-    e.preventDefault();
-    try {
-      await asignarConductor(token, asignacionForm);
-      fetchPedidos();
-      setAsignacionForm({ pedido_id: '', conductor_id: '' });
-    } catch (err) {
-      setError('Error al asignar conductor');
-    }
+    // Scroll al formulario de edición
+    document.querySelector('.form-container')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const resetForm = () => {
@@ -129,166 +160,302 @@ const PedidoManagement = () => {
     setFormData({ origen: '', destino: '', descripcion: '' });
   };
 
+  const canCreatePedido = userRole === 'client' || userRole === 'admin';
+  const canEditPedido = (pedido) => {
+    if (userRole === 'admin') return true;
+    if (userRole === 'client') return pedido.cliente_id === parseInt(localStorage.getItem('userId'));
+    if (userRole === 'driver') return pedido.conductor_id === parseInt(localStorage.getItem('conductorId'));
+    return false;
+  };
+
+  const getStatusColor = (estado) => {
+    switch (estado) {
+      case 'pendiente':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'en_progreso':
+        return 'bg-blue-100 text-blue-800';
+      case 'completado':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleAsignarConductor = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:8000/api/pedido-conductor', {
+        pedido_id: parseInt(asignacionForm.pedido_id),
+        conductor_id: parseInt(asignacionForm.conductor_id)
+      }, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      // Actualizar la lista de pedidos
+      await fetchPedidos(); // Recargar todos los pedidos para obtener la información actualizada
+      
+      // Limpiar el formulario
+      setAsignacionForm({
+        pedido_id: '',
+        conductor_id: ''
+      });
+      
+      setError(null);
+    } catch (err) {
+      console.error('Error al asignar conductor:', err);
+      setError(err.response?.data?.message || 'Error al asignar el conductor');
+    }
+  };
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-grow container-center bg-background-light">
-        <h1 className="text-3xl font-bold mb-6">Gestión de Pedidos</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
-          {['client', 'admin'].includes(user?.user_type) && (
-            <Card title={editingId ? 'Editar Pedido' : 'Nuevo Pedido'}>
-              {error && <p className="error-message">{error}</p>}
-              <form onSubmit={handleSubmit}>
-                <div className="mb-4">
-                  <label className="block text-text-light mb-1">Origen</label>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 h-16 shadow-lg"></div>
+      <main className="container mx-auto px-4 py-8 -mt-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 mb-8 border border-gray-100">
+            <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+              <div className="flex items-center space-x-4">
+                <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-blue-100 flex items-center justify-center">
+                  <FaBox className="text-2xl sm:text-3xl text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
+                    {userRole === 'client' && 'Mis Pedidos'}
+                    {userRole === 'driver' && 'Pedidos Asignados'}
+                    {userRole === 'admin' && 'Gestión de Pedidos'}
+                  </h1>
+                  <p className="text-sm sm:text-base text-gray-600">
+                    {userRole === 'client' && 'Administra tus pedidos de transporte'}
+                    {userRole === 'driver' && 'Gestiona los pedidos asignados a ti'}
+                    {userRole === 'admin' && 'Administra todos los pedidos del sistema'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg border border-red-200">
+              <div className="flex items-center">
+                <FaInfoCircle className="mr-2" />
+                {error}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-8">
+            {canCreatePedido && (
+              <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 form-container">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-gray-800 flex items-center">
+                  <FaBox className="mr-2 text-blue-600" />
+                  {editingId ? 'Editar Pedido' : 'Nuevo Pedido'}
+                </h2>
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <FaMapMarkerAlt className="inline mr-2 text-blue-600" />
+                      Origen
+                    </label>
                   <input
                     type="text"
-                    name="origen"
                     value={formData.origen}
-                    onChange={(e) => setFormData({ ...formData, origen: e.target.value })}
-                    className="w-full"
-                    placeholder="Ciudad A"
+                      onChange={(e) => setFormData({...formData, origen: e.target.value})}
+                      className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     required
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="block text-text-light mb-1">Destino</label>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <FaMapMarkerAlt className="inline mr-2 text-blue-600" />
+                      Destino
+                    </label>
                   <input
                     type="text"
-                    name="destino"
                     value={formData.destino}
-                    onChange={(e) => setFormData({ ...formData, destino: e.target.value })}
-                    className="w-full"
-                    placeholder="Ciudad B"
+                      onChange={(e) => setFormData({...formData, destino: e.target.value})}
+                      className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     required
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="block text-text-light mb-1">Descripción</label>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <FaInfoCircle className="inline mr-2 text-blue-600" />
+                      Descripción
+                    </label>
                   <textarea
-                    name="descripcion"
                     value={formData.descripcion}
-                    onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                    className="w-full"
-                    placeholder="Carga de 2 toneladas"
+                      onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
+                      className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      rows="3"
                   />
                 </div>
-                <div className="flex space-x-2">
-                  <Button type="submit">{editingId ? 'Actualizar' : 'Crear'}</Button>
+                  <div className="flex justify-end space-x-3 pt-4">
                   {editingId && (
-                    <Button type="button" variant="secondary" onClick={resetForm}>
+                      <button
+                        type="button"
+                        onClick={resetForm}
+                        className="px-4 sm:px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
                       Cancelar
-                    </Button>
-                  )}
+                      </button>
+                    )}
+                    <button
+                      type="submit"
+                      className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      {editingId ? 'Actualizar' : 'Crear'}
+                    </button>
                 </div>
               </form>
-            </Card>
-          )}
-          {user?.user_type === 'admin' && (
-            <Card title="Asignar Conductor">
-              <form onSubmit={handleAsignar}>
-                <div className="mb-4">
-                  <label className="block text-text-light mb-1">Pedido</label>
+              </div>
+            )}
+
+            {userRole === 'admin' && (
+              <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-gray-800 flex items-center">
+                  <FaUserPlus className="mr-2 text-blue-600" />
+                  Asignar Conductor
+                </h2>
+                <form onSubmit={handleAsignarConductor} className="space-y-4 sm:space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <FaBox className="inline mr-2 text-blue-600" />
+                      Pedido
+                    </label>
                   <select
-                    name="pedido_id"
                     value={asignacionForm.pedido_id}
-                    onChange={(e) => setAsignacionForm({ ...asignacionForm, pedido_id: e.target.value })}
-                    className="w-full"
+                      onChange={(e) => setAsignacionForm({...asignacionForm, pedido_id: e.target.value})}
+                      className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     required
                   >
-                    <option value="">Seleccionar</option>
-                    {pedidos.map((pedido) => (
+                      <option value="">Seleccionar pedido</option>
+                      {pedidos
+                        .filter(pedido => !pedido.conductor_id)
+                        .map(pedido => (
                       <option key={pedido.id} value={pedido.id}>
-                        {pedido.origen} a {pedido.destino}
+                            {pedido.origen} → {pedido.destino}
                       </option>
                     ))}
                   </select>
                 </div>
-                <div className="mb-4">
-                  <label className="block text-text-light mb-1">Conductor</label>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <FaUser className="inline mr-2 text-blue-600" />
+                      Conductor
+                    </label>
                   <select
-                    name="conductor_id"
                     value={asignacionForm.conductor_id}
-                    onChange={(e) => setAsignacionForm({ ...asignacionForm, conductor_id: e.target.value })}
-                    className="w-full"
+                      onChange={(e) => setAsignacionForm({...asignacionForm, conductor_id: e.target.value})}
+                      className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     required
-                  >
-                    <option value="">Seleccionar</option>
-                    {conductores.map((conductor) => (
-                      <option key={conductor.id} value={conductor.conductor.id}>
-                        {conductor.name}
+                      disabled={loading}
+                    >
+                      <option value="">Seleccionar conductor</option>
+                      {conductores.map(conductor => (
+                        <option key={conductor.id} value={conductor.id}>
+                          {conductor.name || 'Conductor sin nombre'}
                       </option>
                     ))}
                   </select>
+                    {loading && (
+                      <p className="mt-2 text-sm text-gray-500">
+                        Cargando conductores...
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={loading}
+                    >
+                      Asignar Conductor
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 xl:col-span-2">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-gray-800 flex items-center">
+                <FaTruck className="mr-2 text-blue-600" />
+                {userRole === 'client' && 'Mis Pedidos'}
+                {userRole === 'driver' && 'Pedidos Asignados'}
+                {userRole === 'admin' && 'Lista de Pedidos'}
+              </h2>
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-4 text-gray-600">Cargando pedidos...</p>
                 </div>
-                <Button type="submit">Asignar</Button>
-              </form>
-            </Card>
-          )}
-          <Card title="Lista de Pedidos">
-            {pedidos.length === 0 ? (
-              <p className="text-text-light">No hay pedidos</p>
-            ) : (
-              <ul className="space-y-4">
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {pedidos.map((pedido) => (
-                  <li key={pedido.id} className="flex flex-col">
-                    <div className="flex justify-between items-center">
-                      <span>
-                        {pedido.origen} a {pedido.destino} ({pedido.estado})
+                    <div
+                      key={pedido.id}
+                      className="p-4 sm:p-6 border rounded-xl hover:shadow-md transition-all bg-white"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2">
+                          <FaMapMarkerAlt className="text-blue-600 flex-shrink-0" />
+                          <h3 className="font-semibold text-base sm:text-lg truncate">
+                            {pedido.origen} → {pedido.destino}
+                          </h3>
+                        </div>
+                        {pedido.descripcion && (
+                          <p className="text-gray-600 text-sm sm:text-base flex items-start">
+                            <FaInfoCircle className="mt-1 mr-2 text-blue-600 flex-shrink-0" />
+                            {pedido.descripcion}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(pedido.estado)}`}>
+                            {pedido.estado}
+                          </span>
+                          {pedido.conductor && (
+                            <span className="flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                              <FaTruck className="mr-1" />
+                              Conductor asignado: {pedido.conductor?.user?.name || pedido.conductor?.name || 'N/A'}
+                            </span>
+                          )}
+                          {userRole === 'admin' && (
+                            <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                              <span className="flex items-center">
+                                <FaUser className="mr-1" />
+                                Cliente: {pedido.cliente?.name || 'N/A'}
                       </span>
-                      <div>
-                        {(user?.user_type === 'client' && pedido.cliente_id === user.id) || user?.user_type === 'admin' ? (
-                          <>
+                            </div>
+                          )}
+                        </div>
+                        {canEditPedido(pedido) && (
+                          <div className="flex justify-end space-x-2 pt-2">
                             <button
                               onClick={() => handleEdit(pedido)}
-                              className="text-primary mr-2 hover:underline"
+                              className="px-3 sm:px-4 py-1 sm:py-2 text-blue-600 hover:text-blue-800 transition-colors"
                             >
                               Editar
                             </button>
                             <button
                               onClick={() => handleDelete(pedido.id)}
-                              className="text-error hover:underline"
+                              className="px-3 sm:px-4 py-1 sm:py-2 text-red-600 hover:text-red-800 transition-colors"
                             >
                               Eliminar
                             </button>
-                          </>
-                        ) : null}
-                        {user?.user_type === 'driver' && pedido.conductor_id === user.conductor?.id ? (
-                          <select
-                            value={pedido.estado}
-                            onChange={(e) => handleEstadoChange(pedido.id, e.target.value)}
-                            className="ml-2"
-                          >
-                            <option value="pendiente">Pendiente</option>
-                            <option value="en_progreso">En Progreso</option>
-                            <option value="completado">Completado</option>
-                          </select>
-                        ) : null}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <p className="text-text-light mt-1">
-                      Cliente: {pedido.cliente.name} | Conductor: {pedido.conductor?.user.name || 'Sin asignar'}
-                    </p>
-                    {['driver', 'admin'].includes(user?.user_type) && pedido.rutas?.length > 0 && (
-                      <div className="ml-4 mt-2">
-                        <p className="text-text-light font-semibold">Rutas asignadas:</p>
-                        <ul className="list-disc ml-4">
-                          {pedido.rutas.map((ruta) => (
-                            <li key={ruta.id}>
-                              {ruta.nombre}: {ruta.origen} a {ruta.destino} ({ruta.distancia_km} km, {ruta.duracion_estimada_min} min)
-                            </li>
-                          ))}
-                        </ul>
+                  ))}
                       </div>
                     )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+            </div>
+          </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };
