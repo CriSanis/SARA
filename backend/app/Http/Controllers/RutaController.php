@@ -38,18 +38,22 @@ class RutaController extends Controller
      *     )
      * )
      */
-    public function index()
-    {
-        $user = Auth::user();
-        if ($user->hasRole('admin')) {
-            $rutas = Ruta::with('pedidos')->get();
-        } else {
-            $rutas = Ruta::whereHas('pedidos', function ($query) use ($user) {
-                $query->where('conductor_id', $user->conductor->id);
-            })->with('pedidos')->get();
-        }
-        return response()->json($rutas);
+   public function index()
+{
+    $user = Auth::user();
+    if ($user->hasRole('admin')) {
+        $rutas = Ruta::with(['pedidos' => function ($query) {
+            $query->withPivot('id');
+        }])->get();
+    } else {
+        $rutas = Ruta::whereHas('pedidos', function ($query) use ($user) {
+            $query->where('conductor_id', $user->conductor->id);
+        })->with(['pedidos' => function ($query) {
+            $query->withPivot('id');
+        }])->get();
     }
+    return response()->json($rutas);
+}
 
     /**
      * @OA\Post(
