@@ -6,6 +6,8 @@ use App\Models\Pedido;
 use App\Models\Conductor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Mail\ConductorAsignado;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * @OA\Tag(
@@ -228,8 +230,13 @@ class PedidoController extends Controller
             'conductor_id' => 'required|exists:conductores,id',
         ]);
 
-        $pedido = Pedido::findOrFail($request->pedido_id);
+        $pedido = Pedido::with('cliente')->findOrFail($request->pedido_id);
+        $conductor = Conductor::with('user')->findOrFail($request->conductor_id);
+        
         $pedido->update(['conductor_id' => $request->conductor_id]);
+
+        // Enviar email de notificación
+        Mail::to($pedido->cliente->email)->send(new ConductorAsignado($pedido, $conductor));
 
         return response()->json($pedido);
     }
