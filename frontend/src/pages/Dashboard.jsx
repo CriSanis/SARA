@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUser } from '../services/auth';
 import { Link } from 'react-router-dom';
+import { showAuthNotification, showSystemNotification } from '../components/NotificationToast';
 import { 
   FaUsers, 
   FaUserTie, 
@@ -21,6 +22,7 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    showAuthNotification('Has cerrado sesión exitosamente', 'LOGOUT');
     navigate('/login');
   };
 
@@ -31,9 +33,13 @@ const Dashboard = () => {
       return;
     }
     getUser(token)
-      .then((response) => setUser(response.data))
+      .then((response) => {
+        setUser(response.data);
+        showAuthNotification(`¡Bienvenido de nuevo, ${response.data.name}!`, 'LOGIN');
+      })
       .catch(() => {
         localStorage.removeItem('token');
+        showAuthNotification('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'ERROR');
         navigate('/login');
       });
   }, [navigate]);

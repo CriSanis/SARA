@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaBox, FaTruck, FaUser, FaMapMarkerAlt, FaInfoCircle, FaUserPlus } from 'react-icons/fa';
+import { FaBox, FaTruck, FaUser, FaMapMarkerAlt, FaInfoCircle, FaUserPlus, FaClock } from 'react-icons/fa';
 import axios from 'axios';
+import { showPedidoNotification, showSystemNotification, showEstadoNotification, showTiempoNotification } from '../components/NotificationToast';
+import NotificationBell from '../components/NotificationBell';
 
 const PedidoManagement = () => {
   const navigate = useNavigate();
@@ -17,6 +19,7 @@ const PedidoManagement = () => {
     pedido_id: '',
     conductor_id: ''
   });
+  const notificationBellRef = useRef(null);
 
   useEffect(() => {
     if (token) {
@@ -92,9 +95,13 @@ const PedidoManagement = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPedidos([...pedidos, response.data]);
+      showSystemNotification('Pedido creado exitosamente', 'SUCCESS');
       return response.data;
     } catch (err) {
-      setError('Error al crear el pedido');
+      const errorMessage = err.response?.data?.message || 'Error al crear el pedido';
+      setError(errorMessage);
+      showSystemNotification(errorMessage, 'ERROR');
+      console.error('Error detallado:', err.response?.data);
       throw err;
     }
   };
@@ -107,9 +114,28 @@ const PedidoManagement = () => {
       setPedidos(pedidos.map(pedido => 
         pedido.id === id ? response.data : pedido
       ));
+
+      // Mostrar notificación de cambio de estado
+      if (data.estado) {
+        showEstadoNotification(
+          `El estado del pedido ha cambiado a: ${data.estado}`,
+          data.estado
+        );
+      }
+
+      // Mostrar notificación de cambio de tiempo
+      if (data.tiempo_estimado) {
+        showTiempoNotification(
+          `El tiempo estimado ha sido actualizado a: ${data.tiempo_estimado}`,
+          data.tiempo_estimado,
+          data.fecha_estimada
+        );
+      }
+
       return response.data;
     } catch (err) {
       setError('Error al actualizar el pedido');
+      showSystemNotification('No se pudo actualizar el pedido. Por favor, intente nuevamente.', 'ERROR');
       throw err;
     }
   };
@@ -195,25 +221,47 @@ const PedidoManagement = () => {
         }
       });
       
-      // Actualizar la lista de pedidos
-      await fetchPedidos(); // Recargar todos los pedidos para obtener la información actualizada
-      
-      // Limpiar el formulario
+      await fetchPedidos();
       setAsignacionForm({
         pedido_id: '',
         conductor_id: ''
       });
       
+      showPedidoNotification('El conductor ha sido asignado exitosamente al pedido', 'ASSIGNED');
+      
+      // Notificar al cliente
+      const pedido = pedidos.find(p => p.id === parseInt(asignacionForm.pedido_id));
+      const conductor = conductores.find(c => c.id === parseInt(asignacionForm.conductor_id));
+      
+      if (pedido && conductor) {
+        const notification = {
+          title: 'Conductor Asignado',
+          message: `Se ha asignado a ${conductor.name} como conductor de tu pedido de ${pedido.origen} a ${pedido.destino}`,
+          timestamp: new Date().toISOString(),
+          read: false
+        };
+        notificationBellRef.current?.addNotification(notification);
+      }
+      
       setError(null);
     } catch (err) {
       console.error('Error al asignar conductor:', err);
       setError(err.response?.data?.message || 'Error al asignar el conductor');
+      showSystemNotification('No se pudo asignar el conductor. Por favor, intente nuevamente.', 'ERROR');
     }
   };
 
-  return (
+      return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 h-16 shadow-lg"></div>
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 h-16 shadow-lg flex items-center justify-between px-6">
+        <div className="flex items-center space-x-3">
+          <FaTruck className="text-3xl text-white" />
+          <span className="text-2xl font-bold text-white">S.A.R.A.</span>
+              </div>
+        <div className="flex items-center space-x-4">
+          <NotificationBell ref={notificationBellRef} userRole={userRole} />
+              </div>
+              </div>
       <main className="container mx-auto px-4 py-8 -mt-8">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 mb-8 border border-gray-100">
@@ -221,8 +269,8 @@ const PedidoManagement = () => {
               <div className="flex items-center space-x-4">
                 <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-blue-100 flex items-center justify-center">
                   <FaBox className="text-2xl sm:text-3xl text-blue-600" />
-                </div>
-                <div>
+              </div>
+              <div>
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
                     {userRole === 'client' && 'Mis Pedidos'}
                     {userRole === 'driver' && 'Pedidos Asignados'}
@@ -233,10 +281,10 @@ const PedidoManagement = () => {
                     {userRole === 'driver' && 'Gestiona los pedidos asignados a ti'}
                     {userRole === 'admin' && 'Administra todos los pedidos del sistema'}
                   </p>
-                </div>
               </div>
-            </div>
-          </div>
+              </div>
+                        </div>
+              </div>
 
           {error && (
             <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg border border-red-200">
@@ -244,8 +292,8 @@ const PedidoManagement = () => {
                 <FaInfoCircle className="mr-2" />
                 {error}
               </div>
-            </div>
-          )}
+                </div>
+              )}
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-8">
             {canCreatePedido && (
@@ -260,47 +308,47 @@ const PedidoManagement = () => {
                       <FaMapMarkerAlt className="inline mr-2 text-blue-600" />
                       Origen
                     </label>
-                  <input
-                    type="text"
-                    value={formData.origen}
+                    <input
+                      type="text"
+                      value={formData.origen}
                       onChange={(e) => setFormData({...formData, origen: e.target.value})}
                       className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    required
-                  />
-                </div>
+                      required
+                    />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <FaMapMarkerAlt className="inline mr-2 text-blue-600" />
                       Destino
                     </label>
-                  <input
-                    type="text"
-                    value={formData.destino}
+                    <input
+                      type="text"
+                      value={formData.destino}
                       onChange={(e) => setFormData({...formData, destino: e.target.value})}
                       className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    required
-                  />
-                </div>
+                      required
+                    />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <FaInfoCircle className="inline mr-2 text-blue-600" />
                       Descripción
                     </label>
-                  <textarea
-                    value={formData.descripcion}
+                    <textarea
+                      value={formData.descripcion}
                       onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
                       className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       rows="3"
-                  />
-                </div>
+                    />
+                  </div>
                   <div className="flex justify-end space-x-3 pt-4">
                   {editingId && (
-                      <button
-                        type="button"
+                                         <button
+                                            type="button"
                         onClick={resetForm}
                         className="px-4 sm:px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                       >
-                      Cancelar
+                        Cancelar
                       </button>
                     )}
                     <button
@@ -309,8 +357,8 @@ const PedidoManagement = () => {
                     >
                       {editingId ? 'Actualizar' : 'Crear'}
                     </button>
-                </div>
-              </form>
+                  </div>
+                </form>
               </div>
             )}
 
@@ -326,47 +374,47 @@ const PedidoManagement = () => {
                       <FaBox className="inline mr-2 text-blue-600" />
                       Pedido
                     </label>
-                  <select
-                    value={asignacionForm.pedido_id}
+                   <select
+                     value={asignacionForm.pedido_id}
                       onChange={(e) => setAsignacionForm({...asignacionForm, pedido_id: e.target.value})}
                       className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    required
-                  >
+                     required
+                   >
                       <option value="">Seleccionar pedido</option>
-                      {pedidos
+                     {pedidos
                         .filter(pedido => !pedido.conductor_id)
                         .map(pedido => (
-                      <option key={pedido.id} value={pedido.id}>
+                         <option key={pedido.id} value={pedido.id}>
                             {pedido.origen} → {pedido.destino}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                         </option>
+                       ))}
+                   </select>
+                 </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <FaUser className="inline mr-2 text-blue-600" />
                       Conductor
                     </label>
-                  <select
-                    value={asignacionForm.conductor_id}
+                   <select
+                     value={asignacionForm.conductor_id}
                       onChange={(e) => setAsignacionForm({...asignacionForm, conductor_id: e.target.value})}
                       className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    required
+                     required
                       disabled={loading}
                     >
                       <option value="">Seleccionar conductor</option>
                       {conductores.map(conductor => (
                         <option key={conductor.id} value={conductor.id}>
                           {conductor.name || 'Conductor sin nombre'}
-                      </option>
-                    ))}
-                  </select>
+                       </option>
+                     ))}
+                   </select>
                     {loading && (
                       <p className="mt-2 text-sm text-gray-500">
                         Cargando conductores...
                       </p>
                     )}
-                  </div>
+                 </div>
                   <div className="flex justify-end">
                     <button
                       type="submit"
@@ -375,10 +423,10 @@ const PedidoManagement = () => {
                     >
                       Asignar Conductor
                     </button>
-                  </div>
+                 </div>
                 </form>
-              </div>
-            )}
+                   </div>
+                 )}
 
             <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 xl:col-span-2">
               <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-gray-800 flex items-center">
@@ -394,7 +442,7 @@ const PedidoManagement = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pedidos.map((pedido) => (
+                   {pedidos.map((pedido) => (
                     <div
                       key={pedido.id}
                       className="p-4 sm:p-6 border rounded-xl hover:shadow-md transition-all bg-white"
@@ -410,12 +458,26 @@ const PedidoManagement = () => {
                           <p className="text-gray-600 text-sm sm:text-base flex items-start">
                             <FaInfoCircle className="mt-1 mr-2 text-blue-600 flex-shrink-0" />
                             {pedido.descripcion}
-                          </p>
-                        )}
+                                 </p>
+                             )}
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(pedido.estado)}`}>
-                            {pedido.estado}
-                          </span>
+                          {(userRole === 'admin' || userRole === 'driver') && (
+                            <select
+                              value={pedido.estado}
+                              onChange={(e) => handleUpdate(pedido.id, { ...pedido, estado: e.target.value })}
+                              className={`px-3 py-1 rounded-full text-sm ${getStatusColor(pedido.estado)} border-0 focus:ring-2 focus:ring-blue-500`}
+                            >
+                              <option value="pendiente">Pendiente</option>
+                              <option value="en_progreso">En Progreso</option>
+                              <option value="completado">Completado</option>
+                              <option value="cancelado">Cancelado</option>
+                            </select>
+                          )}
+                          {userRole === 'client' && (
+                            <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(pedido.estado)}`}>
+                              {pedido.estado}
+                            </span>
+                          )}
                           {pedido.conductor && (
                             <span className="flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
                               <FaTruck className="mr-1" />
@@ -427,10 +489,10 @@ const PedidoManagement = () => {
                               <span className="flex items-center">
                                 <FaUser className="mr-1" />
                                 Cliente: {pedido.cliente?.name || 'N/A'}
-                      </span>
+                              </span>
                             </div>
                           )}
-                        </div>
+                         </div>
                         {canEditPedido(pedido) && (
                           <div className="flex justify-end space-x-2 pt-2">
                             <button
@@ -447,11 +509,46 @@ const PedidoManagement = () => {
                             </button>
                           </div>
                         )}
-                      </div>
-                    </div>
+                        {(userRole === 'admin' || userRole === 'driver') && (
+                                 <div className="mt-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Tiempo Estimado
+                            </label>
+                            <div className="flex space-x-2">
+                              <input
+                                type="text"
+                                value={pedido.tiempo_estimado || ''}
+                                onChange={(e) => handleUpdate(pedido.id, { ...pedido, tiempo_estimado: e.target.value })}
+                                placeholder="Ej: 30 minutos"
+                                className="px-3 py-1 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                              />
+                              <input
+                                type="datetime-local"
+                                value={pedido.fecha_estimada || ''}
+                                onChange={(e) => handleUpdate(pedido.id, { ...pedido, fecha_estimada: e.target.value })}
+                                className="px-3 py-1 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                              />
+                                       </div>
+                                  </div>
+                        )}
+                        {userRole === 'client' && pedido.tiempo_estimado && (
+                          <div className="mt-2">
+                            <span className="flex items-center text-sm text-gray-600">
+                              <FaClock className="mr-2 text-blue-600" />
+                              Tiempo estimado: {pedido.tiempo_estimado}
+                              {pedido.fecha_estimada && (
+                                <span className="ml-2">
+                                  (Llegada estimada: {new Date(pedido.fecha_estimada).toLocaleString()})
+                                </span>
+                              )}
+                      </span>
+                                </div>
+                            )}
+                        </div>
+                     </div>
                   ))}
-                      </div>
-                    )}
+                          </div>
+                     )}
             </div>
           </div>
         </div>

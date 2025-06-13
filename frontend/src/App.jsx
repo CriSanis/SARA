@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
 import ScrollToTop from './components/common/ScrollToTop';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -17,6 +18,7 @@ import Nosotros from './pages/Nosotros';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import './index.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 const AppContent = () => {
   const location = useLocation();
@@ -52,6 +54,7 @@ const AppContent = () => {
         </Routes>
       </main>
       {!isAdminRoute && <Footer />}
+      <ToastContainer />
     </div>
   );
 };
