@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Mail\ConductorAsignado;
 use Illuminate\Support\Facades\Mail;
+use App\Events\ModelAudited;
 
 /**
  * @OA\Tag(
@@ -92,7 +93,7 @@ class PedidoController extends Controller
         $request->validate([
             'origen' => 'required|string|max:255',
             'destino' => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
+            'descripcion' => 'required|string',
         ]);
 
         $pedido = Pedido::create([
@@ -102,6 +103,8 @@ class PedidoController extends Controller
             'descripcion' => $request->descripcion,
             'estado' => 'pendiente',
         ]);
+
+        event(new ModelAudited(Auth::user(), 'create', $pedido));
 
         return response()->json($pedido, 201);
     }
@@ -144,23 +147,23 @@ class PedidoController extends Controller
     public function update(Request $request, $id)
     {
         $pedido = Pedido::findOrFail($id);
-        $user = Auth::user();
-
-        if ($user->hasRole('client') && $pedido->cliente_id !== $user->id) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-        if ($user->hasRole('driver') && $pedido->conductor_id !== $user->conductor->id) {
+        
+        // Validar que el usuario tenga permiso para actualizar
+        if (Auth::user()->hasRole('client') && $pedido->cliente_id !== Auth::id()) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
         $request->validate([
+            'estado' => 'sometimes|required|in:pendiente,en_progreso,completado',
             'origen' => 'sometimes|required|string|max:255',
             'destino' => 'sometimes|required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'estado' => 'sometimes|required|in:pendiente,en_progreso,completado',
+            'descripcion' => 'sometimes|required|string',
         ]);
 
-        $pedido->update($request->only(['origen', 'destino', 'descripcion', 'estado']));
+        $pedido->update($request->all());
+
+        event(new ModelAudited(Auth::user(), 'update', $pedido));
+
         return response()->json($pedido);
     }
 
@@ -185,13 +188,16 @@ class PedidoController extends Controller
     public function destroy($id)
     {
         $pedido = Pedido::findOrFail($id);
-        $user = Auth::user();
-
-        if ($user->hasRole('client') && $pedido->cliente_id !== $user->id) {
+        
+        // Validar que el usuario tenga permiso para eliminar
+        if (Auth::user()->hasRole('client') && $pedido->cliente_id !== Auth::id()) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
         $pedido->delete();
+
+        event(new ModelAudited(Auth::user(), 'delete', $pedido));
+
         return response()->json(null, 204);
     }
 
@@ -230,13 +236,10 @@ class PedidoController extends Controller
             'conductor_id' => 'required|exists:conductores,id',
         ]);
 
-        $pedido = Pedido::with('cliente')->findOrFail($request->pedido_id);
-        $conductor = Conductor::with('user')->findOrFail($request->conductor_id);
-        
+        $pedido = Pedido::findOrFail($request->pedido_id);
         $pedido->update(['conductor_id' => $request->conductor_id]);
 
-        // Enviar email de notificación
-        Mail::to($pedido->cliente->email)->send(new ConductorAsignado($pedido, $conductor));
+        event(new ModelAudited(Auth::user(), 'assign_conductor', $pedido));
 
         return response()->json($pedido);
     }

@@ -6,6 +6,7 @@ use App\Models\Ruta;
 use App\Models\Pedido;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Events\ModelAudited;
 
 /**
  * @OA\Tag(
@@ -97,6 +98,9 @@ class RutaController extends Controller
         ]);
 
         $ruta = Ruta::create($request->all());
+        
+        event(new ModelAudited(Auth::user(), 'create', $ruta));
+        
         return response()->json($ruta, 201);
     }
 
@@ -150,6 +154,9 @@ class RutaController extends Controller
         ]);
 
         $ruta->update($request->all());
+        
+        event(new ModelAudited(Auth::user(), 'update', $ruta));
+        
         return response()->json($ruta);
     }
 
@@ -175,6 +182,9 @@ class RutaController extends Controller
     {
         $ruta = Ruta::findOrFail($id);
         $ruta->delete();
+        
+        event(new ModelAudited(Auth::user(), 'delete', $ruta));
+        
         return response()->json(null, 204);
     }
 
@@ -225,6 +235,9 @@ class RutaController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        $pedido = Pedido::find($request->pedido_id);
+        event(new ModelAudited(Auth::user(), 'assign_ruta', $pedido));
 
         return response()->json(['id' => $asignacion, 'pedido_id' => $request->pedido_id, 'ruta_id' => $request->ruta_id], 201);
     }

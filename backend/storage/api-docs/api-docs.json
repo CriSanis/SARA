@@ -314,6 +314,81 @@
                 ]
             }
         },
+        "/api/audits": {
+            "get": {
+                "tags": [
+                    "Auditoría"
+                ],
+                "summary": "Listar registros de auditoría",
+                "operationId": "1c75a0de7ba478b69bf5711c9dc4178a",
+                "parameters": [
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "model_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de registros de auditoría",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer"
+                                            },
+                                            "user_id": {
+                                                "type": "integer"
+                                            },
+                                            "action": {
+                                                "type": "string"
+                                            },
+                                            "model_type": {
+                                                "type": "string"
+                                            },
+                                            "model_id": {
+                                                "type": "integer"
+                                            },
+                                            "changes": {
+                                                "type": "object"
+                                            },
+                                            "created_at": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/register": {
             "post": {
                 "tags": [
@@ -640,11 +715,9 @@
                                             "destino": {
                                                 "type": "string"
                                             },
-                                            "descripcion_carga": {
-                                                "type": "string"
-                                            },
-                                            "peso": {
-                                                "type": "number"
+                                            "descripcion": {
+                                                "type": "string",
+                                                "nullable": true
                                             },
                                             "estado": {
                                                 "type": "string"
@@ -676,26 +749,21 @@
                             "schema": {
                                 "required": [
                                     "origen",
-                                    "destino",
-                                    "descripcion_carga",
-                                    "peso"
+                                    "destino"
                                 ],
                                 "properties": {
                                     "origen": {
                                         "type": "string",
-                                        "example": "Bogotá"
+                                        "example": "Ciudad A"
                                     },
                                     "destino": {
                                         "type": "string",
-                                        "example": "Medellín"
+                                        "example": "Ciudad B"
                                     },
-                                    "descripcion_carga": {
+                                    "descripcion": {
                                         "type": "string",
-                                        "example": "Material de construcción"
-                                    },
-                                    "peso": {
-                                        "type": "number",
-                                        "example": 2.5
+                                        "example": "Carga de 2 toneladas",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -722,11 +790,9 @@
                                         "destino": {
                                             "type": "string"
                                         },
-                                        "descripcion_carga": {
-                                            "type": "string"
-                                        },
-                                        "peso": {
-                                            "type": "number"
+                                        "descripcion": {
+                                            "type": "string",
+                                            "nullable": true
                                         },
                                         "estado": {
                                             "type": "string"
@@ -736,9 +802,6 @@
                                 }
                             }
                         }
-                    },
-                    "422": {
-                        "description": "Datos inválidos"
                     }
                 },
                 "security": [
@@ -770,40 +833,28 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "origen",
-                                    "destino",
-                                    "descripcion_carga",
-                                    "peso",
-                                    "estado"
-                                ],
                                 "properties": {
                                     "origen": {
                                         "type": "string",
-                                        "example": "Bogotá"
+                                        "example": "Ciudad A"
                                     },
                                     "destino": {
                                         "type": "string",
-                                        "example": "Medellín"
+                                        "example": "Ciudad B"
                                     },
-                                    "descripcion_carga": {
+                                    "descripcion": {
                                         "type": "string",
-                                        "example": "Material actualizado"
-                                    },
-                                    "peso": {
-                                        "type": "number",
-                                        "example": 3
+                                        "example": "Carga de 2 toneladas",
+                                        "nullable": true
                                     },
                                     "estado": {
                                         "type": "string",
                                         "enum": [
                                             "pendiente",
-                                            "asignado",
                                             "en_progreso",
-                                            "completado",
-                                            "cancelado"
+                                            "completado"
                                         ],
-                                        "example": "pendiente"
+                                        "example": "en_progreso"
                                     }
                                 },
                                 "type": "object"
@@ -830,11 +881,9 @@
                                         "destino": {
                                             "type": "string"
                                         },
-                                        "descripcion_carga": {
-                                            "type": "string"
-                                        },
-                                        "peso": {
-                                            "type": "number"
+                                        "descripcion": {
+                                            "type": "string",
+                                            "nullable": true
                                         },
                                         "estado": {
                                             "type": "string"
@@ -844,9 +893,6 @@
                                 }
                             }
                         }
-                    },
-                    "403": {
-                        "description": "No autorizado"
                     }
                 },
                 "security": [
@@ -874,9 +920,6 @@
                 "responses": {
                     "204": {
                         "description": "Pedido eliminado"
-                    },
-                    "403": {
-                        "description": "No autorizado"
                     }
                 },
                 "security": [
@@ -886,32 +929,27 @@
                 ]
             }
         },
-        "/api/pedidos/{id}/asignar": {
+        "/api/pedido-conductor": {
             "post": {
                 "tags": [
                     "Pedidos"
                 ],
                 "summary": "Asignar conductor a un pedido",
-                "operationId": "60f7ff50f9d22371a05abdb5576ea1b5",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "operationId": "3a323f54d131695947ba883283c1a20a",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "pedido_id",
                                     "conductor_id"
                                 ],
                                 "properties": {
+                                    "pedido_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "conductor_id": {
                                         "type": "integer",
                                         "example": 1
@@ -944,12 +982,6 @@
                                         "destino": {
                                             "type": "string"
                                         },
-                                        "descripcion_carga": {
-                                            "type": "string"
-                                        },
-                                        "peso": {
-                                            "type": "number"
-                                        },
                                         "estado": {
                                             "type": "string"
                                         }
@@ -958,9 +990,471 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/reportes/pedidos": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Reporte de pedidos",
+                "operationId": "7756f47d951c1462646a59c9a77c2ea1",
+                "parameters": [
+                    {
+                        "name": "estado",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pendiente",
+                                "en_progreso",
+                                "completado"
+                            ]
+                        }
                     },
-                    "403": {
-                        "description": "No autorizado"
+                    {
+                        "name": "cliente_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "fecha_inicio",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "fecha_fin",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reporte generado",
+                        "content": {
+                            "application/pdf": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/reportes/conductores": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Reporte de conductores",
+                "operationId": "3528a0dc04ca3266f3a601eeed0fd9e9",
+                "parameters": [
+                    {
+                        "name": "conductor_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reporte generado",
+                        "content": {
+                            "application/pdf": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/reportes/rutas": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Reporte de rutas",
+                "operationId": "f289d155f86d2956e6c5cac2755b7fa1",
+                "parameters": [
+                    {
+                        "name": "ruta_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reporte generado",
+                        "content": {
+                            "application/pdf": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/rutas": {
+            "get": {
+                "tags": [
+                    "Rutas"
+                ],
+                "summary": "Listar rutas",
+                "operationId": "07f8f66135da1afc0dbdded354b14e48",
+                "responses": {
+                    "200": {
+                        "description": "Lista de rutas",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer"
+                                            },
+                                            "nombre": {
+                                                "type": "string"
+                                            },
+                                            "origen": {
+                                                "type": "string"
+                                            },
+                                            "destino": {
+                                                "type": "string"
+                                            },
+                                            "distancia_km": {
+                                                "type": "number"
+                                            },
+                                            "duracion_estimada_min": {
+                                                "type": "integer"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Rutas"
+                ],
+                "summary": "Crear una nueva ruta",
+                "operationId": "7ae787bdba22d5f0225ce1875bc8f0d8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "nombre",
+                                    "origen",
+                                    "destino",
+                                    "distancia_km",
+                                    "duracion_estimada_min"
+                                ],
+                                "properties": {
+                                    "nombre": {
+                                        "type": "string",
+                                        "example": "Ruta Norte"
+                                    },
+                                    "origen": {
+                                        "type": "string",
+                                        "example": "Ciudad A"
+                                    },
+                                    "destino": {
+                                        "type": "string",
+                                        "example": "Ciudad B"
+                                    },
+                                    "distancia_km": {
+                                        "type": "number",
+                                        "example": 150.5
+                                    },
+                                    "duracion_estimada_min": {
+                                        "type": "integer",
+                                        "example": 120
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Ruta creada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "nombre": {
+                                            "type": "string"
+                                        },
+                                        "origen": {
+                                            "type": "string"
+                                        },
+                                        "destino": {
+                                            "type": "string"
+                                        },
+                                        "distancia_km": {
+                                            "type": "number"
+                                        },
+                                        "duracion_estimada_min": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/rutas/{id}": {
+            "put": {
+                "tags": [
+                    "Rutas"
+                ],
+                "summary": "Actualizar una ruta",
+                "operationId": "5fd15592c13b8a0d0310bd8112d2c16d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "nombre",
+                                    "origen",
+                                    "destino",
+                                    "distancia_km",
+                                    "duracion_estimada_min"
+                                ],
+                                "properties": {
+                                    "nombre": {
+                                        "type": "string",
+                                        "example": "Ruta Norte"
+                                    },
+                                    "origen": {
+                                        "type": "string",
+                                        "example": "Ciudad A"
+                                    },
+                                    "destino": {
+                                        "type": "string",
+                                        "example": "Ciudad B"
+                                    },
+                                    "distancia_km": {
+                                        "type": "number",
+                                        "example": 150.5
+                                    },
+                                    "duracion_estimada_min": {
+                                        "type": "integer",
+                                        "example": 120
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Ruta actualizada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "nombre": {
+                                            "type": "string"
+                                        },
+                                        "origen": {
+                                            "type": "string"
+                                        },
+                                        "destino": {
+                                            "type": "string"
+                                        },
+                                        "distancia_km": {
+                                            "type": "number"
+                                        },
+                                        "duracion_estimada_min": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Rutas"
+                ],
+                "summary": "Eliminar una ruta",
+                "operationId": "541c24e02b1a6056f57c938357b5ffe3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Ruta eliminada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pedido-ruta": {
+            "post": {
+                "tags": [
+                    "Rutas"
+                ],
+                "summary": "Asignar ruta a un pedido",
+                "operationId": "196c2f8d32cc90bfaedfcb04f437b5f1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "pedido_id",
+                                    "ruta_id"
+                                ],
+                                "properties": {
+                                    "pedido_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "ruta_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Ruta asignada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "pedido_id": {
+                                            "type": "integer"
+                                        },
+                                        "ruta_id": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pedido-ruta/{id}": {
+            "delete": {
+                "tags": [
+                    "Rutas"
+                ],
+                "summary": "Desasignar ruta de un pedido",
+                "operationId": "c18e5b8ec880e4caeafca9ab811aa261",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Ruta desasignada"
                     }
                 },
                 "security": [
@@ -1552,12 +2046,24 @@
             "description": "Operaciones para gestionar asociaciones y sus conductores (solo administradores)"
         },
         {
+            "name": "Auditoría",
+            "description": "Operaciones para gestionar registros de auditoría (solo administradores)"
+        },
+        {
             "name": "Conductores",
             "description": "Operaciones para gestionar conductores (solo administradores)"
         },
         {
             "name": "Pedidos",
-            "description": "Operaciones para gestionar pedidos de transporte"
+            "description": "Operaciones para gestionar pedidos"
+        },
+        {
+            "name": "Reportes",
+            "description": "Operaciones para generar reportes (solo administradores)"
+        },
+        {
+            "name": "Rutas",
+            "description": "Operaciones para gestionar rutas"
         },
         {
             "name": "Usuarios",

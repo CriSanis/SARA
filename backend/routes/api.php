@@ -9,6 +9,8 @@ use App\Http\Controllers\AsociacionController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\RutaController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\AuditController;
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {
@@ -34,7 +36,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         Route::post('/pedido-conductor', [PedidoController::class, 'asignarConductor']);
 
-        Route::get('/rutas', [RutaController::class, 'index']);
         Route::post('/rutas', [RutaController::class, 'store']);
         Route::put('/rutas/{id}', [RutaController::class, 'update']);
         Route::delete('/rutas/{id}', [RutaController::class, 'destroy']);
@@ -44,6 +45,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/reportes/pedidos', [ReporteController::class, 'reportePedidos']);
         Route::get('/reportes/conductores', [ReporteController::class, 'reporteConductores']);
         Route::get('/reportes/rutas', [ReporteController::class, 'reporteRutas']);
+
+        Route::get('/audits', [AuditController::class, 'index']);
+        Route::get('/audits/model/{model}', [AuditController::class, 'getByModel']);
+        Route::get('/audits/user/{userId}', [AuditController::class, 'getByUser']);
+        Route::get('/audits/action/{action}', [AuditController::class, 'getByAction']);
     });
 
     Route::middleware(['role:admin|driver|client'])->group(function () {
@@ -52,8 +58,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/pedidos', [PedidoController::class, 'store'])->middleware('permission:create-pedidos');
         Route::put('/pedidos/{id}', [PedidoController::class, 'update']);
         Route::delete('/pedidos/{id}', [PedidoController::class, 'destroy']);
+        Route::get('/notificaciones', [NotificacionController::class, 'index']);
+        Route::post('/notificaciones/{id}/marcar-leida', [NotificacionController::class, 'marcarLeida']);
     });
 
+    // Rutas comunes para admin y driver
     Route::middleware(['role:admin|driver'])->group(function () {
         Route::get('/rutas', [RutaController::class, 'index']);
     });
