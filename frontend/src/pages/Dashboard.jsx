@@ -13,7 +13,8 @@ import {
   FaTruck,
   FaBoxOpen,
   FaSignOutAlt,
-  FaTruckMoving
+  FaTruckMoving,
+  FaHistory
 } from 'react-icons/fa';
 
 const Dashboard = () => {
@@ -88,6 +89,13 @@ const Dashboard = () => {
       description: "Genera reportes y estadísticas",
       link: "/admin/reportes",
       color: "bg-indigo-50 hover:bg-indigo-100"
+    },
+    {
+      title: "Auditoría",
+      icon: <FaHistory className="text-4xl text-teal-600" />,
+      description: "Registro de acciones en el sistema",
+      link: "/admin/auditoria",
+      color: "bg-teal-50 hover:bg-teal-100"
     }
   ];
 

@@ -10,6 +10,7 @@ import { FaRoute, FaMapMarkerAlt, FaClock, FaRoad, FaEdit, FaTrash, FaBox, FaTim
 const RutaManagement = () => {
   const [rutas, setRutas] = useState([]);
   const [pedidos, setPedidos] = useState([]);
+  const [userRole, setUserRole] = useState(null);
   const [formData, setFormData] = useState({
     nombre: '',
     origen: '',
@@ -56,6 +57,10 @@ const RutaManagement = () => {
       ]);
       setRutas(rutasResponse.data);
       setPedidos(pedidosResponse.data);
+      
+      // Obtener el rol del usuario del token decodificado
+      const tokenData = JSON.parse(atob(token.split('.')[1]));
+      setUserRole(tokenData.role);
     } catch (err) {
       showMessage(err.response?.data?.message || 'Error al cargar datos', true);
       if (err.response?.status === 401) {
@@ -73,6 +78,11 @@ const RutaManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (userRole !== 'admin') {
+      showMessage('No tienes permisos para realizar esta acción', true);
+      return;
+    }
+
     setLoading(true);
     try {
       if (editingId) {
@@ -92,6 +102,10 @@ const RutaManagement = () => {
   };
 
   const handleEdit = (ruta) => {
+    if (userRole !== 'admin') {
+      showMessage('No tienes permisos para realizar esta acción', true);
+      return;
+    }
     setEditingId(ruta.id);
     setFormData({
       nombre: ruta.nombre,
@@ -103,6 +117,11 @@ const RutaManagement = () => {
   };
 
   const handleDelete = async (id) => {
+    if (userRole !== 'admin') {
+      showMessage('No tienes permisos para realizar esta acción', true);
+      return;
+    }
+
     if (window.confirm('¿Estás seguro de eliminar esta ruta?')) {
       setLoading(true);
       try {
@@ -119,6 +138,11 @@ const RutaManagement = () => {
 
   const handleAsignar = async (e) => {
     e.preventDefault();
+    if (userRole !== 'admin') {
+      showMessage('No tienes permisos para realizar esta acción', true);
+      return;
+    }
+
     setLoading(true);
     try {
       await asignarRuta(token, asignacionForm);
@@ -133,6 +157,11 @@ const RutaManagement = () => {
   };
 
   const handleDesasignar = async (asignacionId) => {
+    if (userRole !== 'admin') {
+      showMessage('No tienes permisos para realizar esta acción', true);
+      return;
+    }
+
     if (window.confirm('¿Estás seguro de desasignar este pedido?')) {
       setLoading(true);
       try {
@@ -181,10 +210,10 @@ const RutaManagement = () => {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-800 mb-1">
-                    Gestión de Rutas
+                    {userRole === 'admin' ? 'Gestión de Rutas' : 'Mis Rutas'}
                   </h1>
                   <p className="text-gray-600">
-                    Administra rutas y asigna pedidos
+                    {userRole === 'admin' ? 'Administra rutas y asigna pedidos' : 'Visualiza tus rutas asignadas'}
                   </p>
                 </div>
               </div>
@@ -216,107 +245,74 @@ const RutaManagement = () => {
               {successMessage}
             </div>
           )}
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-              <Card title={editingId ? 'Editar Ruta' : 'Nueva Ruta'} className="border border-gray-100">
+
+          {userRole === 'admin' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <Card>
+                <h2 className="text-xl font-semibold mb-4">
+                  {editingId ? 'Editar Ruta' : 'Nueva Ruta'}
+                </h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                    <label className="block text-sm font-medium text-gray-700">Nombre</label>
                     <input
                       type="text"
-                      name="nombre"
                       value={formData.nombre}
                       onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ruta Norte"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                       required
-                      disabled={loading}
                     />
                   </div>
-                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Origen</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        name="origen"
-                        value={formData.origen}
-                        onChange={(e) => setFormData({ ...formData, origen: e.target.value })}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Ciudad A"
-                        required
-                        disabled={loading}
-                      />
-                      <FaMapMarkerAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700">Origen</label>
+                    <input
+                      type="text"
+                      value={formData.origen}
+                      onChange={(e) => setFormData({ ...formData, origen: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    />
                   </div>
-                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        name="destino"
-                        value={formData.destino}
-                        onChange={(e) => setFormData({ ...formData, destino: e.target.value })}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Ciudad B"
-                        required
-                        disabled={loading}
-                      />
-                      <FaMapMarkerAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700">Destino</label>
+                    <input
+                      type="text"
+                      value={formData.destino}
+                      onChange={(e) => setFormData({ ...formData, destino: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    />
                   </div>
-                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Distancia (km)</label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        name="distancia_km"
-                        value={formData.distancia_km}
-                        onChange={(e) => setFormData({ ...formData, distancia_km: e.target.value })}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="150.5"
-                        step="0.1"
-                        min="0.1"
-                        required
-                        disabled={loading}
-                      />
-                      <FaRoad className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700">Distancia (km)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={formData.distancia_km}
+                      onChange={(e) => setFormData({ ...formData, distancia_km: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    />
                   </div>
-                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Duración Estimada (min)</label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        name="duracion_estimada_min"
-                        value={formData.duracion_estimada_min}
-                        onChange={(e) => setFormData({ ...formData, duracion_estimada_min: e.target.value })}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="120"
-                        min="1"
-                        required
-                        disabled={loading}
-                      />
-                      <FaClock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700">Duración (minutos)</label>
+                    <input
+                      type="number"
+                      value={formData.duracion_estimada_min}
+                      onChange={(e) => setFormData({ ...formData, duracion_estimada_min: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    />
                   </div>
-                  
-                  <div className="flex space-x-3 pt-2">
-                    <Button type="submit" loading={loading} className="flex items-center space-x-2">
-                      <FaRoute className="h-4 w-4" />
-                      <span>{editingId ? 'Actualizar' : 'Crear'}</span>
+                  <div className="flex space-x-4">
+                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                      {editingId ? 'Actualizar' : 'Crear'}
                     </Button>
                     {editingId && (
-                      <Button 
-                        type="button" 
-                        variant="secondary" 
+                      <Button
+                        type="button"
                         onClick={resetForm}
-                        disabled={loading}
+                        className="bg-gray-500 hover:bg-gray-600"
                       >
                         Cancelar
                       </Button>
@@ -324,151 +320,115 @@ const RutaManagement = () => {
                   </div>
                 </form>
               </Card>
-            </div>
-            
-            <div className="lg:col-span-1">
-              <Card title="Asignar Pedido a Ruta" className="border border-gray-100">
+
+              <Card>
+                <h2 className="text-xl font-semibold mb-4">Asignar Pedido a Ruta</h2>
                 <form onSubmit={handleAsignar} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Pedido</label>
-                    <div className="relative">
-                      <select
-                        name="pedido_id"
-                        value={asignacionForm.pedido_id}
-                        onChange={(e) => setAsignacionForm({ ...asignacionForm, pedido_id: e.target.value })}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                        disabled={loading}
-                      >
-                        <option value="">Seleccionar pedido</option>
-                        {pedidos
-                          .filter(pedido => !pedido.ruta_id)
-                          .map((pedido) => (
-                            <option key={`pedido-option-${pedido.id}`} value={pedido.id}>
-                              #{pedido.id} - {pedido.origen} → {pedido.destino}
-                            </option>
-                          ))}
-                      </select>
-                      <FaBox className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700">Pedido</label>
+                    <select
+                      value={asignacionForm.pedido_id}
+                      onChange={(e) => setAsignacionForm({ ...asignacionForm, pedido_id: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Seleccionar pedido</option>
+                      {pedidos.map((pedido) => (
+                        <option key={pedido.id} value={pedido.id}>
+                          Pedido #{pedido.id} - {pedido.descripcion}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ruta</label>
-                    <div className="relative">
-                      <select
-                        name="ruta_id"
-                        value={asignacionForm.ruta_id}
-                        onChange={(e) => setAsignacionForm({ ...asignacionForm, ruta_id: e.target.value })}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                        disabled={loading}
-                      >
-                        <option value="">Seleccionar ruta</option>
-                        {rutas.map((ruta) => (
-                          <option key={`ruta-option-${ruta.id}`} value={ruta.id}>
-                            {ruta.nombre} ({ruta.origen} → {ruta.destino})
-                          </option>
-                        ))}
-                      </select>
-                      <FaRoute className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700">Ruta</label>
+                    <select
+                      value={asignacionForm.ruta_id}
+                      onChange={(e) => setAsignacionForm({ ...asignacionForm, ruta_id: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Seleccionar ruta</option>
+                      {rutas.map((ruta) => (
+                        <option key={ruta.id} value={ruta.id}>
+                          {ruta.nombre}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  
-                  <Button type="submit" loading={loading} className="w-full flex items-center justify-center space-x-2">
-                    <FaBox className="h-4 w-4" />
-                    <span>Asignar Pedido</span>
+                  <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                    Asignar
                   </Button>
                 </form>
               </Card>
             </div>
-            
-            <div className="lg:col-span-1">
-              <Card title="Lista de Rutas" className="border border-gray-100">
-                {rutas.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No hay rutas registradas</p>
-                ) : (
-                  <div className="space-y-4">
-                    {rutas.map((ruta) => (
-                      <div 
-                        key={`ruta-${ruta.id}`}
-                        className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow bg-white"
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {rutas.map((ruta) => (
+              <Card key={ruta.id} className="relative">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">{ruta.nombre}</h3>
+                    <div className="flex items-center text-gray-600 mt-1">
+                      <FaMapMarkerAlt className="mr-2" />
+                      <span>{ruta.origen} → {ruta.destino}</span>
+                    </div>
+                  </div>
+                  {userRole === 'admin' && (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEdit(ruta)}
+                        className="text-blue-600 hover:text-blue-800"
                       >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium text-gray-800 flex items-center space-x-2">
-                              <FaRoute className="h-4 w-4 text-blue-500" />
-                              <span>{ruta.nombre}</span>
-                            </h3>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {ruta.origen} → {ruta.destino}
-                            </p>
-                            <div className="flex items-center mt-2 space-x-2">
-                              <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 flex items-center space-x-1">
-                                <FaRoad className="h-3 w-3" />
-                                <span>{ruta.distancia_km} km</span>
-                              </span>
-                              <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800 flex items-center space-x-1">
-                                <FaClock className="h-3 w-3" />
-                                <span>{ruta.duracion_estimada_min} min</span>
-                              </span>
-                            </div>
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(ruta.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center text-gray-600">
+                    <FaRoad className="mr-2" />
+                    <span>{ruta.distancia_km} km</span>
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <FaClock className="mr-2" />
+                    <span>{ruta.duracion_estimada_min} minutos</span>
+                  </div>
+                </div>
+                {ruta.pedidos && ruta.pedidos.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Pedidos asignados:</h4>
+                    <div className="space-y-2">
+                      {ruta.pedidos.map((pedido) => (
+                        <div key={pedido.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                          <div className="flex items-center">
+                            <FaBox className="text-gray-500 mr-2" />
+                            <span className="text-sm text-gray-600">
+                              Pedido #{pedido.id}
+                            </span>
                           </div>
-                          
-                          <div className="flex space-x-2">
+                          {userRole === 'admin' && (
                             <button
-                              onClick={() => handleEdit(ruta)}
-                              className="text-blue-600 hover:text-blue-800 flex items-center space-x-1"
-                              disabled={loading}
+                              onClick={() => handleDesasignar(pedido.pivot.id)}
+                              className="text-red-600 hover:text-red-800"
                             >
-                              <FaEdit className="h-4 w-4" />
-                              <span>Editar</span>
+                              <FaTimes />
                             </button>
-                            <button
-                              onClick={() => handleDelete(ruta.id)}
-                              className="text-red-600 hover:text-red-800 flex items-center space-x-1"
-                              disabled={loading}
-                            >
-                              <FaTrash className="h-4 w-4" />
-                              <span>Eliminar</span>
-                            </button>
-                          </div>
+                          )}
                         </div>
-                        
-                        {ruta.pedidos.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-gray-100">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center space-x-2">
-                              <FaBox className="h-4 w-4 text-gray-400" />
-                              <span>Pedidos asignados:</span>
-                            </h4>
-                            <ul className="space-y-2">
-                              {ruta.pedidos.map((pedido) => (
-                                <li 
-                                  key={`pedido-${pedido.pivot.id}`}
-                                  className="flex justify-between items-center bg-gray-50 p-2 rounded-md hover:bg-gray-100 transition-colors"
-                                >
-                                  <span className="text-sm text-gray-700">
-                                    #{pedido.id} - {pedido.origen} → {pedido.destino}
-                                  </span>
-                                  <button
-                                    onClick={() => handleDesasignar(pedido.pivot.id)}
-                                    className="text-red-500 hover:text-red-700 flex items-center space-x-1"
-                                    disabled={loading}
-                                  >
-                                    <FaTimes className="h-3 w-3" />
-                                    <span>Desasignar</span>
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </Card>
-            </div>
+            ))}
           </div>
         </div>
       </main>
