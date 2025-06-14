@@ -2,13 +2,101 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaBox, FaTruck, FaUser, FaMapMarkerAlt, FaInfoCircle, FaUserPlus, FaClock } from 'react-icons/fa';
 import axios from 'axios';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { showPedidoNotification, showSystemNotification, showEstadoNotification, showTiempoNotification } from '../components/NotificationToast';
 import NotificationBell from '../components/NotificationBell';
+
+// Fix para los íconos de Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+const MapComponent = ({ center, markers, onMarkerClick }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    map.setView(center);
+    
+    // Agregar el evento de clic al mapa
+    map.on('click', (e) => {
+      if (onMarkerClick) {
+        onMarkerClick(e);
+      }
+    });
+
+    // Limpiar el evento cuando el componente se desmonte
+    return () => {
+      map.off('click');
+    };
+  }, [center, map, onMarkerClick]);
+
+  return (
+    <>
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      />
+      {markers && markers.map((marker, index) => (
+        <Marker
+          key={index}
+          position={[marker.lat, marker.lng]}
+        >
+          <Popup>
+            {marker.title}
+          </Popup>
+        </Marker>
+      ))}
+    </>
+  );
+};
+
+const PedidoMap = ({ pedido }) => {
+  const markers = [];
+  
+  if (pedido?.origen_coordenadas) {
+    markers.push({
+      lat: pedido.origen_coordenadas.lat,
+      lng: pedido.origen_coordenadas.lng,
+      title: `Origen: ${pedido.origen}`
+    });
+  }
+  
+  if (pedido?.destino_coordenadas) {
+    markers.push({
+      lat: pedido.destino_coordenadas.lat,
+      lng: pedido.destino_coordenadas.lng,
+      title: `Destino: ${pedido.destino}`
+    });
+  }
+
+  const center = markers.length > 0 
+    ? [markers[0].lat, markers[0].lng]
+    : [-16.5, -68.15];
+
+  return (
+    <div className="h-64 w-full rounded-lg overflow-hidden">
+      <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
+        <MapComponent markers={markers} center={center} />
+      </MapContainer>
+    </div>
+  );
+};
 
 const PedidoManagement = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
-  const [formData, setFormData] = useState({ origen: '', destino: '', descripcion: '' });
+  const [formData, setFormData] = useState({ 
+    origen: '', 
+    destino: '', 
+    descripcion: '',
+    origen_coordenadas: null,
+    destino_coordenadas: null
+  });
   const [editingId, setEditingId] = useState(null);
   const [pedidos, setPedidos] = useState([]);
   const [conductores, setConductores] = useState([]);
@@ -19,6 +107,8 @@ const PedidoManagement = () => {
     pedido_id: '',
     conductor_id: ''
   });
+  const [selectedPedido, setSelectedPedido] = useState(null);
+  const [mapCenter, setMapCenter] = useState([-16.5, -68.15]); // Coordenadas por defecto (La Paz)
   const notificationBellRef = useRef(null);
 
   useEffect(() => {
@@ -159,14 +249,20 @@ const PedidoManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const data = {
+        ...formData,
+        origen_coordenadas: formData.origen_coordenadas,
+        destino_coordenadas: formData.destino_coordenadas
+      };
+
       if (editingId) {
-        await handleUpdate(editingId, formData);
+        await handleUpdate(editingId, data);
       } else {
-        await handleCreate(formData);
+        await handleCreate(data);
       }
       resetForm();
     } catch (err) {
-      console.error(err);
+      console.error('Error al guardar el pedido:', err);
     }
   };
 
@@ -176,6 +272,8 @@ const PedidoManagement = () => {
       origen: pedido.origen,
       destino: pedido.destino,
       descripcion: pedido.descripcion || '',
+      origen_coordenadas: pedido.origen_coordenadas,
+      destino_coordenadas: pedido.destino_coordenadas
     });
     // Scroll al formulario de edición
     document.querySelector('.form-container')?.scrollIntoView({ behavior: 'smooth' });
@@ -183,7 +281,7 @@ const PedidoManagement = () => {
 
   const resetForm = () => {
     setEditingId(null);
-    setFormData({ origen: '', destino: '', descripcion: '' });
+    setFormData({ origen: '', destino: '', descripcion: '', origen_coordenadas: null, destino_coordenadas: null });
   };
 
   const canCreatePedido = userRole === 'client' || userRole === 'admin';
@@ -251,7 +349,43 @@ const PedidoManagement = () => {
     }
   };
 
-      return (
+  const getLocationName = async (lat, lng) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+      return data.display_name;
+    } catch (error) {
+      console.error('Error al obtener el nombre de la ubicación:', error);
+      return null;
+    }
+  };
+
+  const handleMapClick = async (e, type) => {
+    const { lat, lng } = e.latlng;
+    try {
+      // Actualizar inmediatamente las coordenadas
+      setFormData(prev => ({
+        ...prev,
+        [`${type}_coordenadas`]: { lat, lng }
+      }));
+
+      // Obtener el nombre de la ubicación
+      const locationName = await getLocationName(lat, lng);
+      console.log('Ubicación seleccionada:', locationName);
+      
+      // Actualizar el nombre de la ubicación
+      setFormData(prev => ({
+        ...prev,
+        [type]: locationName || ''
+      }));
+    } catch (error) {
+      console.error('Error al manejar el clic del mapa:', error);
+    }
+  };
+
+  return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 h-16 shadow-lg flex items-center justify-between px-6">
         <div className="flex items-center space-x-3">
@@ -303,32 +437,86 @@ const PedidoManagement = () => {
                   {editingId ? 'Editar Pedido' : 'Nuevo Pedido'}
                 </h2>
                 <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <FaMapMarkerAlt className="inline mr-2 text-blue-600" />
-                      Origen
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.origen}
-                      onChange={(e) => setFormData({...formData, origen: e.target.value})}
-                      className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      required
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <FaMapMarkerAlt className="inline mr-2 text-blue-600" />
+                        Origen
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.origen}
+                        onChange={(e) => setFormData({...formData, origen: e.target.value})}
+                        className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        required
+                        placeholder="Selecciona una ubicación en el mapa"
+                        readOnly
+                      />
+                      {formData.origen_coordenadas && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          Lat: {formData.origen_coordenadas.lat.toFixed(6)}, 
+                          Lng: {formData.origen_coordenadas.lng.toFixed(6)}
+                        </div>
+                      )}
+                      <div className="mt-2 h-64 w-full rounded-lg overflow-hidden">
+                        <MapContainer 
+                          center={formData.origen_coordenadas ? [formData.origen_coordenadas.lat, formData.origen_coordenadas.lng] : mapCenter} 
+                          zoom={13} 
+                          style={{ height: '100%', width: '100%' }}
+                        >
+                          <MapComponent 
+                            markers={formData.origen_coordenadas ? [{
+                              lat: formData.origen_coordenadas.lat,
+                              lng: formData.origen_coordenadas.lng,
+                              title: formData.origen || 'Origen seleccionado'
+                            }] : []}
+                            center={formData.origen_coordenadas ? [formData.origen_coordenadas.lat, formData.origen_coordenadas.lng] : mapCenter}
+                            onMarkerClick={(e) => handleMapClick(e, 'origen')}
+                          />
+                        </MapContainer>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <FaMapMarkerAlt className="inline mr-2 text-blue-600" />
+                        Destino
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.destino}
+                        onChange={(e) => setFormData({...formData, destino: e.target.value})}
+                        className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        required
+                        placeholder="Selecciona una ubicación en el mapa"
+                        readOnly
+                      />
+                      {formData.destino_coordenadas && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          Lat: {formData.destino_coordenadas.lat.toFixed(6)}, 
+                          Lng: {formData.destino_coordenadas.lng.toFixed(6)}
+                        </div>
+                      )}
+                      <div className="mt-2 h-64 w-full rounded-lg overflow-hidden">
+                        <MapContainer 
+                          center={formData.destino_coordenadas ? [formData.destino_coordenadas.lat, formData.destino_coordenadas.lng] : mapCenter} 
+                          zoom={13} 
+                          style={{ height: '100%', width: '100%' }}
+                        >
+                          <MapComponent 
+                            markers={formData.destino_coordenadas ? [{
+                              lat: formData.destino_coordenadas.lat,
+                              lng: formData.destino_coordenadas.lng,
+                              title: formData.destino || 'Destino seleccionado'
+                            }] : []}
+                            center={formData.destino_coordenadas ? [formData.destino_coordenadas.lat, formData.destino_coordenadas.lng] : mapCenter}
+                            onMarkerClick={(e) => handleMapClick(e, 'destino')}
+                          />
+                        </MapContainer>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <FaMapMarkerAlt className="inline mr-2 text-blue-600" />
-                      Destino
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.destino}
-                      onChange={(e) => setFormData({...formData, destino: e.target.value})}
-                      className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      required
-                    />
-                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <FaInfoCircle className="inline mr-2 text-blue-600" />
@@ -341,10 +529,11 @@ const PedidoManagement = () => {
                       rows="3"
                     />
                   </div>
+
                   <div className="flex justify-end space-x-3 pt-4">
-                  {editingId && (
-                                         <button
-                                            type="button"
+                    {editingId && (
+                      <button
+                        type="button"
                         onClick={resetForm}
                         className="px-4 sm:px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                       >
@@ -354,6 +543,7 @@ const PedidoManagement = () => {
                     <button
                       type="submit"
                       className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      disabled={!formData.origen_coordenadas || !formData.destino_coordenadas}
                     >
                       {editingId ? 'Actualizar' : 'Crear'}
                     </button>
@@ -454,12 +644,20 @@ const PedidoManagement = () => {
                             {pedido.origen} → {pedido.destino}
                           </h3>
                         </div>
+
+                        {pedido.origen_coordenadas && pedido.destino_coordenadas && (
+                          <div className="h-48 w-full rounded-lg overflow-hidden">
+                            <PedidoMap pedido={pedido} />
+                          </div>
+                        )}
+
                         {pedido.descripcion && (
                           <p className="text-gray-600 text-sm sm:text-base flex items-start">
                             <FaInfoCircle className="mt-1 mr-2 text-blue-600 flex-shrink-0" />
                             {pedido.descripcion}
-                                 </p>
-                             )}
+                          </p>
+                        )}
+
                         <div className="flex flex-wrap items-center gap-2">
                           {(userRole === 'admin' || userRole === 'driver') && (
                             <select
