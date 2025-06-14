@@ -4,143 +4,61 @@ namespace App\Http\Controllers;
 
 use App\Models\Ruta;
 use App\Models\Pedido;
+use App\Notifications\RutaAsignada;
+use App\Events\ModelAudited;
+use App\Services\RouteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Events\ModelAudited;
 
-/**
- * @OA\Tag(
- *     name="Rutas",
- *     description="Operaciones para gestionar rutas"
- * )
- */
 class RutaController extends Controller
 {
-    /**
-     * @OA\Get(
-     *     path="/api/rutas",
-     *     summary="Listar rutas",
-     *     tags={"Rutas"},
-     *     security={{"sanctum":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Lista de rutas",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(
-     *                 @OA\Property(property="id", type="integer"),
-     *                 @OA\Property(property="nombre", type="string"),
-     *                 @OA\Property(property="origen", type="string"),
-     *                 @OA\Property(property="destino", type="string"),
-     *                 @OA\Property(property="distancia_km", type="number"),
-     *                 @OA\Property(property="duracion_estimada_min", type="integer")
-     *             )
-     *         )
-     *     )
-     * )
-     */
-   public function index()
-{
-    $user = Auth::user();
-    if ($user->hasRole('admin')) {
-        $rutas = Ruta::with(['pedidos' => function ($query) {
-            $query->withPivot('id');
-        }])->get();
-    } else {
-        $rutas = Ruta::whereHas('pedidos', function ($query) use ($user) {
-            $query->where('conductor_id', $user->conductor->id);
-        })->with(['pedidos' => function ($query) {
-            $query->withPivot('id');
-        }])->get();
-    }
-    return response()->json($rutas);
-}
+    protected $routeService;
 
-    /**
-     * @OA\Post(
-     *     path="/api/rutas",
-     *     summary="Crear una nueva ruta",
-     *     tags={"Rutas"},
-     *     security={{"sanctum":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"nombre","origen","destino","distancia_km","duracion_estimada_min"},
-     *             @OA\Property(property="nombre", type="string", example="Ruta Norte"),
-     *             @OA\Property(property="origen", type="string", example="Ciudad A"),
-     *             @OA\Property(property="destino", type="string", example="Ciudad B"),
-     *             @OA\Property(property="distancia_km", type="number", example=150.5),
-     *             @OA\Property(property="duracion_estimada_min", type="integer", example=120)
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Ruta creada",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="id", type="integer"),
-     *             @OA\Property(property="nombre", type="string"),
-     *             @OA\Property(property="origen", type="string"),
-     *             @OA\Property(property="destino", type="string"),
-     *             @OA\Property(property="distancia_km", type="number"),
-     *             @OA\Property(property="duracion_estimada_min", type="integer")
-     *         )
-     *     )
-     * )
-     */
+    public function __construct(RouteService $routeService)
+    {
+        $this->routeService = $routeService;
+    }
+
+    public function index()
+    {
+        $user = Auth::user();
+        if ($user->hasRole('admin')) {
+            $rutas = Ruta::with('pedidos')->get();
+        } else {
+            $rutas = Ruta::whereHas('pedidos', function ($query) use ($user) {
+                $query->where('conductor_id', $user->conductor->id);
+            })->with('pedidos')->get();
+        }
+        return response()->json($rutas);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255|unique:rutas',
-            'origen' => 'required|string|max:255',
-            'destino' => 'required|string|max:255',
-            'distancia_km' => 'required|numeric|min:0.1',
-            'duracion_estimada_min' => 'required|integer|min:1',
+            'nombre' => 'required|string|max:255',
+            'origen_coordenadas' => 'required|json',
+            'destino_coordenadas' => 'required|json'
         ]);
 
-        $ruta = Ruta::create($request->all());
-        
-        event(new ModelAudited(Auth::user(), 'create', $ruta));
-        
+        $origenCoords = json_decode($request->origen_coordenadas, true);
+        $destinoCoords = json_decode($request->destino_coordenadas, true);
+
+        $coordenadas = [
+            'type' => 'LineString',
+            'coordinates' => [
+                [$origenCoords['lng'], $origenCoords['lat']],
+                [$destinoCoords['lng'], $destinoCoords['lat']]
+            ]
+        ];
+
+        $ruta = Ruta::create([
+            'nombre' => $request->nombre,
+            'coordenadas' => json_encode($coordenadas)
+        ]);
+
         return response()->json($ruta, 201);
     }
 
-    /**
-     * @OA\Put(
-     *     path="/api/rutas/{id}",
-     *     summary="Actualizar una ruta",
-     *     tags={"Rutas"},
-     *     security={{"sanctum":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"nombre","origen","destino","distancia_km","duracion_estimada_min"},
-     *             @OA\Property(property="nombre", type="string", example="Ruta Norte"),
-     *             @OA\Property(property="origen", type="string", example="Ciudad A"),
-     *             @OA\Property(property="destino", type="string", example="Ciudad B"),
-     *             @OA\Property(property="distancia_km", type="number", example=150.5),
-     *             @OA\Property(property="duracion_estimada_min", type="integer", example=120)
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Ruta actualizada",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="id", type="integer"),
-     *             @OA\Property(property="nombre", type="string"),
-     *             @OA\Property(property="origen", type="string"),
-     *             @OA\Property(property="destino", type="string"),
-     *             @OA\Property(property="distancia_km", type="number"),
-     *             @OA\Property(property="duracion_estimada_min", type="integer")
-     *         )
-     *     )
-     * )
-     */
     public function update(Request $request, $id)
     {
         $ruta = Ruta::findOrFail($id);
@@ -148,71 +66,56 @@ class RutaController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:255|unique:rutas,nombre,' . $id,
             'origen' => 'required|string|max:255',
+            'origen_coordenadas' => 'required|json',
             'destino' => 'required|string|max:255',
+            'destino_coordenadas' => 'required|json',
             'distancia_km' => 'required|numeric|min:0.1',
             'duracion_estimada_min' => 'required|integer|min:1',
         ]);
 
-        $ruta->update($request->all());
-        
-        event(new ModelAudited(Auth::user(), 'update', $ruta));
-        
+        $origenCoords = json_decode($request->origen_coordenadas, true);
+        $destinoCoords = json_decode($request->destino_coordenadas, true);
+
+        if (!isset($origenCoords['lat'], $origenCoords['lng'], $destinoCoords['lat'], $destinoCoords['lng'])) {
+            return response()->json(['message' => 'Coordenadas inválidas'], 422);
+        }
+
+        // Calcular coordenadas GeoJSON
+        $routeData = $this->routeService->calculateRoute($origenCoords, $destinoCoords);
+
+        $changes = array_diff_assoc(
+            array_merge($request->all(), ['coordenadas' => $routeData['coordenadas']]),
+            $ruta->toArray()
+        );
+
+        $ruta->update([
+            'nombre' => $request->nombre,
+            'origen' => $request->origen,
+            'destino' => $request->destino,
+            'coordenadas' => $routeData['coordenadas'],
+            'distancia_km' => $routeData['distancia_km'],
+            'duracion_estimada_min' => $routeData['duracion_min'],
+        ]);
+
+        // Registrar auditoría
+        if ($changes) {
+            event(new ModelAudited(Auth::user(), 'update', $ruta, $changes));
+        }
+
         return response()->json($ruta);
     }
 
-    /**
-     * @OA\Delete(
-     *     path="/api/rutas/{id}",
-     *     summary="Eliminar una ruta",
-     *     tags={"Rutas"},
-     *     security={{"sanctum":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=204,
-     *         description="Ruta eliminada"
-     *     )
-     * )
-     */
     public function destroy($id)
     {
         $ruta = Ruta::findOrFail($id);
-        $ruta->delete();
-        
+
+        // Registrar auditoría
         event(new ModelAudited(Auth::user(), 'delete', $ruta));
-        
+
+        $ruta->delete();
         return response()->json(null, 204);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/pedido-ruta",
-     *     summary="Asignar ruta a un pedido",
-     *     tags={"Rutas"},
-     *     security={{"sanctum":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"pedido_id","ruta_id"},
-     *             @OA\Property(property="pedido_id", type="integer", example=1),
-     *             @OA\Property(property="ruta_id", type="integer", example=1)
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Ruta asignada",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="id", type="integer"),
-     *             @OA\Property(property="pedido_id", type="integer"),
-     *             @OA\Property(property="ruta_id", type="integer")
-     *         )
-     *     )
-     * )
-     */
     public function asignarRuta(Request $request)
     {
         $request->validate([
@@ -236,36 +139,85 @@ class RutaController extends Controller
             'updated_at' => now(),
         ]);
 
+        // Notificar al conductor asignado
         $pedido = Pedido::find($request->pedido_id);
-        event(new ModelAudited(Auth::user(), 'assign_ruta', $pedido));
+        $ruta = Ruta::find($request->ruta_id);
+        if ($pedido->conductor) {
+            $pedido->conductor->user->notify(new RutaAsignada($pedido, $ruta));
+        }
+
+        // Registrar auditoría
+        event(new ModelAudited(Auth::user(), 'assign_ruta', $pedido, [
+            'ruta_id' => $request->ruta_id,
+        ]));
 
         return response()->json(['id' => $asignacion, 'pedido_id' => $request->pedido_id, 'ruta_id' => $request->ruta_id], 201);
     }
 
+    public function desasignarRuta($id)
+    {
+        $asignacion = \DB::table('pedido_ruta')->where('id', $id)->first();
+        if (!$asignacion) {
+            return response()->json(['message' => 'Asignación no encontrada'], 404);
+        }
+
+        $pedido = Pedido::find($asignacion->pedido_id);
+
+        // Registrar auditoría
+        event(new ModelAudited(Auth::user(), 'unassign_ruta', $pedido, [
+            'ruta_id' => $asignacion->ruta_id,
+        ]));
+
+        \DB::table('pedido_ruta')->where('id', $id)->delete();
+
+        return response()->json(null, 204);
+    }
+
     /**
-     * @OA\Delete(
-     *     path="/api/pedido-ruta/{id}",
-     *     summary="Desasignar ruta de un pedido",
+     * @OA\Get(
+     *     path="/api/rutas/optimizar",
+     *     summary="Sugerir ruta óptima",
      *     tags={"Rutas"},
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
+     *         name="origen_coordenadas",
+     *         in="query",
      *         required=true,
-     *         @OA\Schema(type="integer")
+     *         @OA\Schema(type="string", example="{\"lat\": -16.5, \"lng\": -68.15}")
+     *     ),
+     *     @OA\Parameter(
+     *         name="destino_coordenadas",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string", example="{\"lat\": -16.6, \"lng\": -68.2}")
      *     ),
      *     @OA\Response(
-     *         response=204,
-     *         description="Ruta desasignada"
+     *         response=200,
+     *         description="Ruta optimizada",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="distancia_km", type="number"),
+     *             @OA\Property(property="duracion_min", type="integer"),
+     *             @OA\Property(property="coordenadas", type="string")
+     *         )
      *     )
      * )
      */
-    public function desasignarRuta($id)
+    public function optimizar(Request $request)
     {
-        $deleted = \DB::table('pedido_ruta')->where('id', $id)->delete();
-        if (!$deleted) {
-            return response()->json(['message' => 'Asignación no encontrada'], 404);
+        $request->validate([
+            'origen_coordenadas' => 'required|json',
+            'destino_coordenadas' => 'required|json',
+        ]);
+
+        $origenCoords = json_decode($request->origen_coordenadas, true);
+        $destinoCoords = json_decode($request->destino_coordenadas, true);
+
+        if (!isset($origenCoords['lat'], $origenCoords['lng'], $destinoCoords['lat'], $destinoCoords['lng'])) {
+            return response()->json(['message' => 'Coordenadas inválidas'], 422);
         }
-        return response()->json(null, 204);
+
+        $routeData = $this->routeService->calculateRoute($origenCoords, $destinoCoords);
+
+        return response()->json($routeData);
     }
 }

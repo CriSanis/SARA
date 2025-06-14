@@ -10,7 +10,15 @@ class Pedido extends Model
     use HasFactory;
 
     protected $fillable = [
-        'cliente_id', 'conductor_id', 'origen', 'destino', 'descripcion', 'estado',
+        'cliente_id', 'conductor_id', 'origen', 'origen_coordenadas', 'destino', 'destino_coordenadas',
+        'distancia_estimada_km', 'duracion_estimada_min', 'descripcion', 'estado',
+    ];
+
+    protected $casts = [
+        'origen_coordenadas' => 'array',
+        'destino_coordenadas' => 'array',
+        'distancia_estimada_km' => 'float',
+        'duracion_estimada_min' => 'integer',
     ];
 
     public function cliente()
@@ -20,7 +28,7 @@ class Pedido extends Model
 
     public function conductor()
     {
-        return $this->belongsTo(Conductor::class, 'conductor_id');
+        return $this->belongsTo(Conductor::class);
     }
 
     public function rutas()

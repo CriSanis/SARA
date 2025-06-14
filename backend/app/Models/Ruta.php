@@ -10,7 +10,11 @@ class Ruta extends Model
     use HasFactory;
 
     protected $fillable = [
-        'nombre', 'origen', 'destino', 'distancia_km', 'duracion_estimada_min',
+        'nombre', 'origen', 'destino', 'coordenadas', 'distancia_km', 'duracion_estimada_min',
+    ];
+
+    protected $casts = [
+        'coordenadas' => 'array',
     ];
 
     public function pedidos()

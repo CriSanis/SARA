@@ -67,10 +67,8 @@ public function admin_can_list_rutas()
     {
         $data = [
             'nombre' => 'Ruta Norte',
-            'origen' => 'Ciudad A',
-            'destino' => 'Ciudad B',
-            'distancia_km' => 150.5,
-            'duracion_estimada_min' => 120,
+            'origen_coordenadas' => json_encode(['lat' => -16.5, 'lng' => -68.15]),
+            'destino_coordenadas' => json_encode(['lat' => -16.6, 'lng' => -68.2])
         ];
 
         $response = $this->withHeader('Authorization', "Bearer $this->adminToken")
@@ -84,13 +82,10 @@ public function admin_can_list_rutas()
     public function admin_can_update_ruta()
     {
         $ruta = Ruta::factory()->create();
-
         $data = [
             'nombre' => 'Ruta Sur',
-            'origen' => 'Ciudad C',
-            'destino' => 'Ciudad D',
-            'distancia_km' => 200.0,
-            'duracion_estimada_min' => 180,
+            'origen_coordenadas' => json_encode(['lat' => -16.5, 'lng' => -68.15]),
+            'destino_coordenadas' => json_encode(['lat' => -16.6, 'lng' => -68.2])
         ];
 
         $response = $this->withHeader('Authorization', "Bearer $this->adminToken")

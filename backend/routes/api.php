@@ -36,20 +36,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         Route::post('/pedido-conductor', [PedidoController::class, 'asignarConductor']);
 
-        Route::post('/rutas', [RutaController::class, 'store']);
-        Route::put('/rutas/{id}', [RutaController::class, 'update']);
-        Route::delete('/rutas/{id}', [RutaController::class, 'destroy']);
-        Route::post('/pedido-ruta', [RutaController::class, 'asignarRuta']);
-        Route::delete('/pedido-ruta/{id}', [RutaController::class, 'desasignarRuta']);
+        Route::get('/rutas', [RutaController::class, 'index']);
+        Route::get('/rutas/{ruta}', [RutaController::class, 'show']);
 
         Route::get('/reportes/pedidos', [ReporteController::class, 'reportePedidos']);
         Route::get('/reportes/conductores', [ReporteController::class, 'reporteConductores']);
         Route::get('/reportes/rutas', [ReporteController::class, 'reporteRutas']);
 
         Route::get('/audits', [AuditController::class, 'index']);
-        Route::get('/audits/model/{model}', [AuditController::class, 'getByModel']);
-        Route::get('/audits/user/{userId}', [AuditController::class, 'getByUser']);
-        Route::get('/audits/action/{action}', [AuditController::class, 'getByAction']);
     });
 
     Route::middleware(['role:admin|driver|client'])->group(function () {
@@ -62,10 +56,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/notificaciones/{id}/marcar-leida', [NotificacionController::class, 'marcarLeida']);
     });
 
-    // Rutas comunes para admin y driver
-    Route::middleware(['role:admin|driver'])->group(function () {
-        Route::get('/rutas', [RutaController::class, 'index']);
-    });
+    Route::middleware(['role:driver'])->get('/rutas', [RutaController::class, 'index']);
+});
+
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::post('/rutas', [RutaController::class, 'store']);
+    Route::put('/rutas/{ruta}', [RutaController::class, 'update']);
+    Route::delete('/rutas/{ruta}', [RutaController::class, 'destroy']);
+    Route::post('/rutas/optimizar', [RutaController::class, 'optimizar']);
+    Route::post('/pedido-ruta', [RutaController::class, 'asignarRuta']);
+    Route::delete('/pedido-ruta/{pedido}', [RutaController::class, 'desasignarRuta']);
 });
 
 Route::post('/register', [AuthController::class, 'register']);
