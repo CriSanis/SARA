@@ -3,42 +3,12 @@ import Navbar from '../components/layout/Navbar';
 
 const Servicios = () => {
   const servicios = [
-    {
-      id: 1,
-      titulo: 'Mudanzas Completas',
-      descripcion: 'Servicio integral de mudanzas para hogares y oficinas, incluyendo embalaje, transporte y desembalaje.',
-      icono: '🚚',
-      caracteristicas: [
-        'Embalaje profesional',
-        'Transporte seguro',
-        'Montaje de muebles',
-        'Seguro incluido'
-      ]
-    },
-    {
-      id: 2,
-      titulo: 'Envíos Express',
-      descripcion: 'Entrega rápida y segura de paquetes y documentos en toda la ciudad de El Alto.',
-      icono: '📦',
-      caracteristicas: [
-        'Entrega el mismo día',
-        'Seguimiento en tiempo real',
-        'Cobertura completa',
-        'Atención personalizada'
-      ]
-    },
-    {
-      id: 3,
-      titulo: 'Logística Empresarial',
-      descripcion: 'Soluciones logísticas personalizadas para empresas de todos los tamaños.',
-      icono: '🏢',
-      caracteristicas: [
-        'Rutas optimizadas',
-        'Gestión de flota',
-        'Reportes detallados',
-        'Soporte 24/7'
-      ]
-    }
+    'Gestión de pedidos',
+    'Seguimiento en tiempo real',
+    'Asignación de conductores',
+    'Reportes y estadísticas',
+    'Notificaciones automáticas',
+    'Gestión de asociaciones'
   ];
 
   return (

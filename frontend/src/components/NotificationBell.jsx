@@ -11,7 +11,7 @@ const NotificationBell = forwardRef(({ userRole }, ref) => {
 
     const fetchNotifications = async () => {
         try {
-            const response = await axios.get('http://localhost:8000/api/notifications', {
+            const response = await axios.get('http://localhost:8000/api/notificaciones', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setNotifications(prevNotifications => {
@@ -20,7 +20,7 @@ const NotificationBell = forwardRef(({ userRole }, ref) => {
                 );
                 return [...newNotifications, ...prevNotifications];
             });
-            setUnreadCount(response.data.filter(n => !n.read_at).length);
+            setUnreadCount(response.data.filter(n => !n.leida).length);
         } catch (error) {
             console.error('Error al obtener notificaciones:', error);
         }
@@ -46,12 +46,12 @@ const NotificationBell = forwardRef(({ userRole }, ref) => {
         setIsOpen(!isOpen);
         if (unreadCount > 0) {
             try {
-                await axios.post('http://localhost:8000/api/notifications/mark-as-read', {}, {
+                await axios.post('http://localhost:8000/api/notificaciones/marcar-todas-leidas', {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setUnreadCount(0);
                 setNotifications(prev => 
-                    prev.map(notif => ({ ...notif, read_at: new Date().toISOString() }))
+                    prev.map(notif => ({ ...notif, leida: true }))
                 );
             } catch (error) {
                 console.error('Error al marcar notificaciones como leídas:', error);
@@ -65,16 +65,13 @@ const NotificationBell = forwardRef(({ userRole }, ref) => {
     };
 
     const formatNotification = (notification) => {
-        if (notification.data) {
-            return {
-                id: notification.id,
-                title: notification.data.title || 'Nueva Notificación',
-                message: notification.data.message || 'Tienes una nueva notificación',
-                timestamp: notification.created_at,
-                read_at: notification.read_at
-            };
-        }
-        return notification;
+        return {
+            id: notification.id,
+            title: notification.titulo || 'Nueva Notificación',
+            message: notification.mensaje || 'Tienes una nueva notificación',
+            timestamp: notification.created_at,
+            read_at: notification.leida
+        };
     };
 
     return (

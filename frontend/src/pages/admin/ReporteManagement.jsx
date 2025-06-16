@@ -4,19 +4,18 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import { getUsers } from '../../services/auth';
 import { getPedidos } from '../../services/pedido';
-import { getRutas } from '../../services/ruta';
-import { getReportePedidos, getReporteConductores, getReporteRutas } from '../../services/reporte';
-import { FaChartBar, FaBox, FaUser, FaRoute, FaCalendarAlt, FaDownload, FaExclamationTriangle, FaFileAlt, FaSearch } from 'react-icons/fa';
+import { getReportePedidos, getReporteConductores } from '../../services/reporte';
+import { FaChartBar, FaBox, FaUser, FaCalendarAlt, FaDownload, FaExclamationTriangle, FaFileAlt, FaSearch, FaFilter, FaInfoCircle } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
 
 const ReporteManagement = () => {
   const [clientes, setClientes] = useState([]);
   const [conductores, setConductores] = useState([]);
   const [pedidos, setPedidos] = useState([]);
-  const [rutas, setRutas] = useState([]);
   const [pedidoForm, setPedidoForm] = useState({ estado: '', cliente_id: '', fecha_inicio: '', fecha_fin: '' });
   const [conductorForm, setConductorForm] = useState({ conductor_id: '' });
-  const [rutaForm, setRutaForm] = useState({ ruta_id: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
@@ -28,7 +27,6 @@ const ReporteManagement = () => {
     fetchClientes();
     fetchConductores();
     fetchPedidos();
-    fetchRutas();
   }, [navigate, token]);
 
   const fetchClientes = async () => {
@@ -58,43 +56,40 @@ const ReporteManagement = () => {
     }
   };
 
-  const fetchRutas = async () => {
-    try {
-      const response = await getRutas(token);
-      setRutas(response.data);
-    } catch (err) {
-      setError('Error al cargar rutas');
-    }
-  };
-
   const handlePedidoSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      await getReportePedidos(token, pedidoForm);
-      setError('');
-    } catch (err) {
-      setError('Error al generar reporte de pedidos');
+      await getReportePedidos(pedidoForm);
+      toast.success('Reporte de pedidos generado exitosamente');
+    } catch (error) {
+      console.error('Error al generar reporte de pedidos:', error);
+      toast.error('Error al generar el reporte de pedidos');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleConductorSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      await getReporteConductores(token, conductorForm);
-      setError('');
-    } catch (err) {
-      setError('Error al generar reporte de conductores');
+      await getReporteConductores(conductorForm);
+      toast.success('Reporte de conductores generado exitosamente');
+    } catch (error) {
+      console.error('Error al generar reporte de conductores:', error);
+      toast.error('Error al generar el reporte de conductores');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleRutaSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await getReporteRutas(token, rutaForm);
-      setError('');
-    } catch (err) {
-      setError('Error al generar reporte de rutas');
-    }
+  const resetPedidoForm = () => {
+    setPedidoForm({ estado: '', cliente_id: '', fecha_inicio: '', fecha_fin: '' });
+  };
+
+  const resetConductorForm = () => {
+    setConductorForm({ conductor_id: '' });
   };
 
   return (
@@ -113,8 +108,14 @@ const ReporteManagement = () => {
                     Generación de Reportes
                   </h1>
                   <p className="text-gray-600">
-                    Genera reportes detallados de pedidos, conductores y rutas
+                    Genera reportes detallados de pedidos y conductores
                   </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="text-sm text-gray-500 flex items-center">
+                  <FaInfoCircle className="mr-1" />
+                  <span>Total Pedidos: {pedidos.length}</span>
                 </div>
               </div>
             </div>
@@ -127,79 +128,105 @@ const ReporteManagement = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card title="Reporte de Pedidos" className="border border-gray-100">
+              <div className="mb-4 flex items-center space-x-2">
+                <FaFilter className="text-blue-500" />
+                <span className="text-sm font-medium text-gray-700">Filtros de Búsqueda</span>
+              </div>
               <form onSubmit={handlePedidoSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                  <div className="relative">
-                    <select
-                      name="estado"
-                      value={pedidoForm.estado}
-                      onChange={(e) => setPedidoForm({ ...pedidoForm, estado: e.target.value })}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Todos</option>
-                      <option value="pendiente">Pendiente</option>
-                      <option value="en_progreso">En Progreso</option>
-                      <option value="completado">Completado</option>
-                    </select>
-                    <FaBox className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                    <div className="relative">
+                      <select
+                        name="estado"
+                        value={pedidoForm.estado}
+                        onChange={(e) => setPedidoForm({ ...pedidoForm, estado: e.target.value })}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Todos</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="en_progreso">En Progreso</option>
+                        <option value="completado">Completado</option>
+                        <option value="cancelado">Cancelado</option>
+                      </select>
+                      <FaBox className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                    <div className="relative">
+                      <select
+                        name="cliente_id"
+                        value={pedidoForm.cliente_id}
+                        onChange={(e) => setPedidoForm({ ...pedidoForm, cliente_id: e.target.value })}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Todos</option>
+                        {clientes.map((cliente) => (
+                          <option key={cliente.id} value={cliente.id}>
+                            {cliente.name}
+                          </option>
+                        ))}
+                      </select>
+                      <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                  <div className="relative">
-                    <select
-                      name="cliente_id"
-                      value={pedidoForm.cliente_id}
-                      onChange={(e) => setPedidoForm({ ...pedidoForm, cliente_id: e.target.value })}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Todos</option>
-                      {clientes.map((cliente) => (
-                        <option key={cliente.id} value={cliente.id}>
-                          {cliente.name}
-                        </option>
-                      ))}
-                    </select>
-                    <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        name="fecha_inicio"
+                        value={pedidoForm.fecha_inicio}
+                        onChange={(e) => setPedidoForm({ ...pedidoForm, fecha_inicio: e.target.value })}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        name="fecha_fin"
+                        value={pedidoForm.fecha_fin}
+                        onChange={(e) => setPedidoForm({ ...pedidoForm, fecha_fin: e.target.value })}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      name="fecha_inicio"
-                      value={pedidoForm.fecha_inicio}
-                      onChange={(e) => setPedidoForm({ ...pedidoForm, fecha_inicio: e.target.value })}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  </div>
+                <div className="flex space-x-4">
+                  <Button 
+                    type="submit" 
+                    className="flex-1 flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700"
+                    disabled={loading}
+                  >
+                    <FaDownload className="h-4 w-4" />
+                    <span>{loading ? 'Generando...' : 'Descargar PDF'}</span>
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={resetPedidoForm}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Limpiar
+                  </Button>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      name="fecha_fin"
-                      value={pedidoForm.fecha_fin}
-                      onChange={(e) => setPedidoForm({ ...pedidoForm, fecha_fin: e.target.value })}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  </div>
-                </div>
-                <Button type="submit" className="w-full flex items-center justify-center space-x-2">
-                  <FaDownload className="h-4 w-4" />
-                  <span>Descargar PDF</span>
-                </Button>
               </form>
             </Card>
 
             <Card title="Reporte de Conductores" className="border border-gray-100">
+              <div className="mb-4 flex items-center space-x-2">
+                <FaFilter className="text-blue-500" />
+                <span className="text-sm font-medium text-gray-700">Filtros de Búsqueda</span>
+              </div>
               <form onSubmit={handleConductorSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Conductor</label>
@@ -220,38 +247,23 @@ const ReporteManagement = () => {
                     <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   </div>
                 </div>
-                <Button type="submit" className="w-full flex items-center justify-center space-x-2">
-                  <FaDownload className="h-4 w-4" />
-                  <span>Descargar PDF</span>
-                </Button>
-              </form>
-            </Card>
-
-            <Card title="Reporte de Rutas" className="border border-gray-100">
-              <form onSubmit={handleRutaSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ruta</label>
-                  <div className="relative">
-                    <select
-                      name="ruta_id"
-                      value={rutaForm.ruta_id}
-                      onChange={(e) => setRutaForm({ ...rutaForm, ruta_id: e.target.value })}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Todos</option>
-                      {rutas.map((ruta) => (
-                        <option key={ruta.id} value={ruta.id}>
-                          {ruta.nombre}
-                        </option>
-                      ))}
-                    </select>
-                    <FaRoute className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  </div>
+                <div className="flex space-x-4">
+                  <Button 
+                    type="submit" 
+                    className="flex-1 flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700"
+                    disabled={loading}
+                  >
+                    <FaDownload className="h-4 w-4" />
+                    <span>{loading ? 'Generando...' : 'Descargar PDF'}</span>
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={resetConductorForm}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Limpiar
+                  </Button>
                 </div>
-                <Button type="submit" className="w-full flex items-center justify-center space-x-2">
-                  <FaDownload className="h-4 w-4" />
-                  <span>Descargar PDF</span>
-                </Button>
               </form>
             </Card>
           </div>

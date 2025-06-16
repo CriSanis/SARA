@@ -7,25 +7,35 @@ import {
   FaUsers, 
   FaUserTie, 
   FaBuilding, 
-  FaRoute, 
   FaClipboardList, 
   FaChartBar,
   FaTruck,
   FaBoxOpen,
   FaSignOutAlt,
   FaTruckMoving,
-  FaHistory
+  FaHistory,
+  FaMapMarkerAlt,
+  FaClock
 } from 'react-icons/fa';
+import axios from 'axios';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix para los íconos de Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
+  const [pedidosActivos, setPedidosActivos] = useState([]);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    showAuthNotification('Has cerrado sesión exitosamente', 'LOGOUT');
-    navigate('/login');
-  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -37,6 +47,10 @@ const Dashboard = () => {
       .then((response) => {
         setUser(response.data);
         showAuthNotification(`¡Bienvenido de nuevo, ${response.data.name}!`, 'LOGIN');
+        if (response.data.user_type === 'driver') {
+          fetchPedidosActivos(token);
+          initializeGeolocation();
+        }
       })
       .catch(() => {
         localStorage.removeItem('token');
@@ -44,6 +58,94 @@ const Dashboard = () => {
         navigate('/login');
       });
   }, [navigate]);
+
+  const fetchPedidosActivos = async (token) => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/pedidos', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const userId = parseInt(localStorage.getItem('userId'));
+      const pedidosFiltrados = response.data.filter(pedido => 
+        pedido.conductor_id === userId && 
+        pedido.estado !== 'completado'
+      );
+      setPedidosActivos(pedidosFiltrados);
+    } catch (error) {
+      console.error('Error al cargar pedidos activos:', error);
+      showSystemNotification('Error al cargar pedidos activos', 'ERROR');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const initializeGeolocation = () => {
+    if ("geolocation" in navigator) {
+      // Obtener ubicación inicial
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCurrentLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          showSystemNotification('Ubicación obtenida exitosamente', 'SUCCESS');
+        },
+        (error) => {
+          console.error("Error obteniendo ubicación:", error);
+          let mensaje = 'Error al obtener ubicación';
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              mensaje = 'Se requiere permiso para acceder a la ubicación';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              mensaje = 'La información de ubicación no está disponible';
+              break;
+            case error.TIMEOUT:
+              mensaje = 'Se agotó el tiempo de espera para obtener la ubicación';
+              break;
+          }
+          showSystemNotification(mensaje, 'ERROR');
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+
+      // Monitoreo continuo de ubicación
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setCurrentLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error("Error monitoreando ubicación:", error);
+          // No mostramos notificación aquí para no molestar al usuario
+          // ya que el monitoreo continuo puede fallar temporalmente
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+
+      // Limpiar el monitoreo cuando el componente se desmonte
+      return () => {
+        navigator.geolocation.clearWatch(watchId);
+      };
+    } else {
+      showSystemNotification('Tu navegador no soporta geolocalización', 'ERROR');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    showAuthNotification('Has cerrado sesión exitosamente', 'LOGOUT');
+    navigate('/login');
+  };
 
   if (!user) return null;
 
@@ -68,13 +170,6 @@ const Dashboard = () => {
       description: "Administra asociaciones de transporte",
       link: "/admin/asociaciones",
       color: "bg-purple-50 hover:bg-purple-100"
-    },
-    {
-      title: "Gestión de Rutas",
-      icon: <FaRoute className="text-4xl text-red-600" />,
-      description: "Optimiza y gestiona rutas de transporte",
-      link: "/admin/rutas",
-      color: "bg-red-50 hover:bg-red-100"
     },
     {
       title: "Gestión de Pedidos",
@@ -172,15 +267,125 @@ const Dashboard = () => {
           )}
 
           {user.user_type === 'driver' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
+              {/* Información del Conductor */}
+              <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-100">
+                <div className="flex items-center space-x-4">
+                  <FaUserTie className="text-4xl text-indigo-600" />
+                  <div className="flex-grow">
+                    <h3 className="text-xl font-semibold text-gray-800">Información del Conductor</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <p className="text-sm text-gray-500">Nombre</p>
+                        <p className="text-gray-800 font-medium">{user.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Licencia</p>
+                        <p className="text-gray-800 font-medium">{user.conductor?.licencia || 'No disponible'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Estado</p>
+                        <p className="text-gray-800 font-medium">Activo</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Última Actualización</p>
+                        <p className="text-gray-800 font-medium">{new Date().toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mi Ubicación Actual */}
+              <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-100">
+                <div className="flex items-center space-x-4">
+                  <FaMapMarkerAlt className="text-4xl text-blue-600" />
+                  <div className="flex-grow">
+                    <h3 className="text-xl font-semibold text-gray-800">Mi Ubicación Actual</h3>
+                    {currentLocation ? (
+                      <div className="mt-4">
+                        <div className="h-64 w-full rounded-lg overflow-hidden">
+                          <MapContainer 
+                            center={[currentLocation.lat, currentLocation.lng]} 
+                            zoom={15} 
+                            style={{ height: '100%', width: '100%' }}
+                          >
+                            <TileLayer
+                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            />
+                            <Marker position={[currentLocation.lat, currentLocation.lng]}>
+                              <Popup>
+                                Tu ubicación actual
+                              </Popup>
+                            </Marker>
+                          </MapContainer>
+                        </div>
+                        <div className="mt-2 text-sm text-gray-600">
+                          <p>Latitud: {currentLocation.lat.toFixed(6)}</p>
+                          <p>Longitud: {currentLocation.lng.toFixed(6)}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-gray-600 mt-2">Obteniendo tu ubicación actual...</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Pedidos Activos */}
               <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-100">
                 <div className="flex items-center space-x-4">
                   <FaTruck className="text-4xl text-green-600" />
+                  <div className="flex-grow">
+                    <h3 className="text-xl font-semibold text-gray-800">Pedidos Activos</h3>
+                    {loading ? (
+                      <p className="text-gray-600 mt-2">Cargando pedidos...</p>
+                    ) : pedidosActivos.length > 0 ? (
+                      <div className="mt-4 space-y-4">
+                        {pedidosActivos.map(pedido => (
+                          <div key={pedido.id} className="border border-gray-200 rounded-lg p-4">
+                            <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-800">Asignaciones</h3>
-                    <p className="text-gray-600 mt-1">Revisa tus asignaciones de transporte</p>
+                                <h4 className="font-medium text-gray-800">Pedido #{pedido.id}</h4>
+                                <p className="text-sm text-gray-600 mt-1">{pedido.direccion_origen} → {pedido.direccion_destino}</p>
+                              </div>
+                              <span className={`px-3 py-1 rounded-full text-sm ${
+                                pedido.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                                pedido.estado === 'en_progreso' ? 'bg-blue-100 text-blue-800' :
+                                'bg-green-100 text-green-800'
+                              }`}>
+                                {pedido.estado}
+                              </span>
+                            </div>
+                            {pedido.fecha_entrega && (
+                              <div className="mt-2 flex items-center text-sm text-gray-600">
+                                <FaClock className="mr-2" />
+                                Entrega: {new Date(pedido.fecha_entrega).toLocaleString()}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-600 mt-2">No tienes pedidos activos en este momento</p>
+                    )}
                     <Link to="/pedidos" className="mt-4 inline-block text-green-600 hover:text-green-800">
-                      Ver Pedidos →
+                      Ver todos los pedidos →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              {/* Historial de Entregas */}
+              <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-100">
+                <div className="flex items-center space-x-4">
+                  <FaHistory className="text-4xl text-purple-600" />
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-800">Historial de Entregas</h3>
+                    <p className="text-gray-600 mt-1">Revisa tus entregas completadas</p>
+                    <Link to="/pedidos" className="mt-4 inline-block text-purple-600 hover:text-purple-800">
+                      Ver Historial →
                     </Link>
                   </div>
                 </div>

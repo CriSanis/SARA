@@ -10,7 +10,6 @@ import UserManagement from './pages/admin/UserManagement';
 import ConductorManagement from './pages/admin/ConductorManagement';
 import AsociacionManagement from './pages/admin/AsociacionManagement';
 import PedidoManagement from './pages/PedidoManagement';
-import RutaManagement from './pages/admin/RutaManagement';
 import ReporteManagement from './pages/admin/ReporteManagement';
 import AuditManagement from './pages/admin/AuditManagement';
 import Servicios from './pages/Servicios';
@@ -20,6 +19,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import './index.css';
 import 'react-toastify/dist/ReactToastify.css';
+import SeguimientoPage from './pages/SeguimientoPage';
 
 const AppContent = () => {
   const location = useLocation();
@@ -28,7 +28,6 @@ const AppContent = () => {
     '/admin/users',
     '/admin/conductores',
     '/admin/asociaciones',
-    '/admin/rutas',
     '/admin/reportes',
     '/admin/auditoria',
     '/pedidos'
@@ -47,13 +46,13 @@ const AppContent = () => {
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/conductores" element={<ConductorManagement />} />
           <Route path="/admin/asociaciones" element={<AsociacionManagement />} />
-          <Route path="/admin/rutas" element={<RutaManagement />} />
           <Route path="/admin/reportes" element={<ReporteManagement />} />
           <Route path="/admin/auditoria" element={<AuditManagement />} />
           <Route path="/pedidos" element={<PedidoManagement />} />
           <Route path="/servicios" element={<Servicios />} />
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/nosotros" element={<Nosotros />} />
+          <Route path="/seguimiento/:pedidoId" element={<SeguimientoPage />} />
         </Routes>
       </main>
       {!isAdminRoute && <Footer />}

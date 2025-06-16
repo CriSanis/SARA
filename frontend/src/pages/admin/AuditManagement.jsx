@@ -4,7 +4,7 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { getAudits, getAuditsByModel, getAuditsByUser, getAuditsByAction } from '../../services/audit';
-import { FaHistory, FaUser, FaBox, FaRoute, FaCar, FaUsers, FaFilter } from 'react-icons/fa';
+import { FaHistory, FaUser, FaBox, FaRoute, FaCar, FaUsers, FaFilter, FaBoxOpen, FaUserTie, FaBuilding, FaInfoCircle, FaCalendarAlt, FaSearch } from 'react-icons/fa';
 
 const AuditManagement = () => {
   const [audits, setAudits] = useState([]);
@@ -33,6 +33,24 @@ const AuditManagement = () => {
     }, 5000);
   };
 
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    console.log('Cambio de filtro:', { name, value }); // Log del cambio
+
+    setFilters(prev => {
+      const newFilters = {
+        ...prev,
+        [name]: value
+      };
+      console.log('Nuevos filtros:', newFilters); // Log de los nuevos filtros
+      return newFilters;
+    });
+  };
+
+  const resetFilters = () => {
+    setFilters({});
+  };
+
   const fetchData = useCallback(async () => {
     if (!token) {
       navigate('/login');
@@ -41,18 +59,12 @@ const AuditManagement = () => {
 
     setLoading(true);
     try {
-      let response;
-      if (filters.model) {
-        response = await getAuditsByModel(token, filters.model);
-      } else if (filters.userId) {
-        response = await getAuditsByUser(token, filters.userId);
-      } else if (filters.action) {
-        response = await getAuditsByAction(token, filters.action);
-      } else {
-        response = await getAudits(token);
-      }
+      console.log('Filtros antes de la petición:', filters); // Log antes de la petición
+      const response = await getAudits(token, filters);
+      console.log('Respuesta del servidor:', response.data); // Log de la respuesta
       setAudits(response.data);
     } catch (err) {
+      console.error('Error completo:', err); // Log del error completo
       showMessage(err.response?.data?.message || 'Error al cargar registros de auditoría', true);
       if (err.response?.status === 401) {
         localStorage.removeItem('token');
@@ -67,34 +79,37 @@ const AuditManagement = () => {
     fetchData();
   }, [fetchData]);
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const resetFilters = () => {
-    setFilters({
-      model: '',
-      action: '',
-      userId: '',
-    });
-  };
-
   const getModelIcon = (model) => {
     switch (model) {
-      case 'Pedido':
-        return <FaBox className="text-blue-500" />;
-      case 'Ruta':
-        return <FaRoute className="text-green-500" />;
-      case 'Vehiculo':
-        return <FaCar className="text-red-500" />;
-      case 'User':
-        return <FaUsers className="text-purple-500" />;
+      case 'pedido':
+        return <FaBoxOpen className="text-blue-500" />;
+      case 'conductor':
+        return <FaUserTie className="text-green-500" />;
+      case 'asociacion':
+        return <FaBuilding className="text-purple-500" />;
+      case 'usuario':
+        return <FaUsers className="text-indigo-500" />;
+      case 'vehiculo':
+        return <FaCar className="text-yellow-500" />;
       default:
-        return <FaBox className="text-gray-500" />;
+        return <FaHistory className="text-gray-500" />;
+    }
+  };
+
+  const getModelLabel = (model) => {
+    switch (model) {
+      case 'pedido':
+        return 'Pedido';
+      case 'conductor':
+        return 'Conductor';
+      case 'asociacion':
+        return 'Asociación';
+      case 'usuario':
+        return 'Usuario';
+      case 'vehiculo':
+        return 'Vehículo';
+      default:
+        return model;
     }
   };
 
@@ -106,8 +121,29 @@ const AuditManagement = () => {
         return 'bg-blue-100 text-blue-800';
       case 'delete':
         return 'bg-red-100 text-red-800';
+      case 'assign_conductor':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'verify':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getActionLabel = (action) => {
+    switch (action) {
+      case 'create':
+        return 'Creación';
+      case 'update':
+        return 'Actualización';
+      case 'delete':
+        return 'Eliminación';
+      case 'assign_conductor':
+        return 'Asignación de Conductor';
+      case 'verify':
+        return 'Verificación';
+      default:
+        return action;
     }
   };
 
@@ -141,6 +177,12 @@ const AuditManagement = () => {
                   </p>
                 </div>
               </div>
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-gray-500 flex items-center">
+                  <FaInfoCircle className="mr-1" />
+                  <span>Total Registros: {audits.length}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -172,8 +214,8 @@ const AuditManagement = () => {
 
           <Card className="mb-8">
             <div className="flex items-center space-x-4 mb-4">
-              <FaFilter className="text-gray-500" />
-              <h2 className="text-lg font-semibold text-gray-800">Filtros</h2>
+              <FaFilter className="text-blue-500" />
+              <h2 className="text-lg font-semibold text-gray-800">Filtros de Búsqueda</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -185,10 +227,11 @@ const AuditManagement = () => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 >
                   <option value="">Todos los modelos</option>
-                  <option value="Pedido">Pedidos</option>
-                  <option value="Ruta">Rutas</option>
-                  <option value="Vehiculo">Vehículos</option>
-                  <option value="User">Usuarios</option>
+                  <option value="pedido">Pedidos</option>
+                  <option value="conductor">Conductores</option>
+                  <option value="asociacion">Asociaciones</option>
+                  <option value="usuario">Usuarios</option>
+                  <option value="vehiculo">Vehículos</option>
                 </select>
               </div>
               <div>
@@ -203,6 +246,8 @@ const AuditManagement = () => {
                   <option value="create">Creación</option>
                   <option value="update">Actualización</option>
                   <option value="delete">Eliminación</option>
+                  <option value="assign_conductor">Asignación de Conductor</option>
+                  <option value="verify">Verificación</option>
                 </select>
               </div>
               <div className="flex items-end space-x-2">
@@ -221,35 +266,35 @@ const AuditManagement = () => {
               <Card key={audit.id} className="relative">
                 <div className="flex items-start space-x-4">
                   <div className="flex-shrink-0">
-                    {getModelIcon(audit.model)}
+                    {getModelIcon(audit.model_type.toLowerCase().split('\\').pop())}
                   </div>
                   <div className="flex-grow">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-800">
-                          {audit.model} #{audit.model_id}
+                          {getModelLabel(audit.model_type.toLowerCase().split('\\').pop())} #{audit.model_id}
                         </h3>
-                        <p className="text-sm text-gray-600">
-                          {new Date(audit.created_at).toLocaleString()}
-                        </p>
+                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                          <FaCalendarAlt className="text-gray-400" />
+                          <span>{new Date(audit.created_at).toLocaleString()}</span>
+                          <FaUser className="text-gray-400 ml-2" />
+                          <span>{audit.user?.name || 'Sistema'}</span>
+                        </div>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${getActionColor(audit.action)}`}>
-                        {audit.action}
+                        {getActionLabel(audit.action)}
                       </span>
                     </div>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">Usuario:</span> {audit.user?.name || 'Sistema'}
-                      </p>
-                      {audit.changes && (
-                        <div className="mt-2">
-                          <h4 className="text-sm font-medium text-gray-700">Cambios:</h4>
-                          <pre className="mt-1 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                    {audit.changes && Object.keys(audit.changes).length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Cambios Realizados:</h4>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <pre className="text-sm text-gray-600 whitespace-pre-wrap">
                             {JSON.stringify(audit.changes, null, 2)}
                           </pre>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </Card>

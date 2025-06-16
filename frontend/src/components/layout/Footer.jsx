@@ -8,10 +8,10 @@ const Footer = () => {
 
   const footerLinks = {
     servicios: [
-      { label: 'Mudanzas', path: '/servicios/mudanzas' },
-      { label: 'Envíos Express', path: '/servicios/express' },
-      { label: 'Logística Empresarial', path: '/servicios/empresarial' },
-      { label: 'Rutas Optimizadas', path: '/servicios/rutas' },
+      { label: 'Gestión de Pedidos', path: '/servicios/pedidos' },
+      { label: 'Seguimiento en Tiempo Real', path: '/servicios/seguimiento' },
+      { label: 'Asignación de Conductores', path: '/servicios/conductores' },
+      { label: 'Reportes y Estadísticas', path: '/servicios/reportes' }
     ],
     empresa: [
       { label: 'Nosotros', path: '/nosotros' },

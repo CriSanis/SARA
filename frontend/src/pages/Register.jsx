@@ -47,6 +47,15 @@ const Register = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const beneficios = [
+    { text: 'Gestión de pedidos', icon: '📦' },
+    { text: 'Seguimiento en tiempo real', icon: '📍' },
+    { text: 'Asignación de conductores', icon: '👨‍✈️' },
+    { text: 'Reportes y estadísticas', icon: '📊' },
+    { text: 'Notificaciones automáticas', icon: '🔔' },
+    { text: 'Gestión de asociaciones', icon: '🤝' }
+  ];
+
   return (
     <div className="min-h-screen bg-background-light">
       <Navbar />
@@ -81,11 +90,7 @@ const Register = () => {
                     Optimiza tus traslados y mudanzas en El Alto con nuestra plataforma inteligente.
                   </p>
                   <div className="space-y-4">
-                    {[
-                      { text: 'Rutas optimizadas', icon: '🗺️' },
-                      { text: 'Conductores verificados', icon: '✅' },
-                      { text: 'Seguimiento en tiempo real', icon: '📱' }
-                    ].map((feature, index) => (
+                    {beneficios.map((feature, index) => (
                       <div 
                         key={feature.text}
                         className="flex items-center animate-on-mount opacity-0 translate-y-4 transition-all duration-500"

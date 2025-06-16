@@ -9,7 +9,13 @@ import { FaBuilding, FaUserPlus, FaUserMinus, FaEdit, FaTrash, FaSearch } from '
 const AsociacionManagement = () => {
   const [asociaciones, setAsociaciones] = useState([]);
   const [conductores, setConductores] = useState([]);
-  const [formData, setFormData] = useState({ nombre: '', descripcion: '' });
+  const [formData, setFormData] = useState({
+    nombre: '',
+    descripcion: '',
+    direccion: '',
+    telefono: '',
+    email: '',
+  });
   const [asignacionForm, setAsignacionForm] = useState({ conductor_id: '', asociacion_id: '' });
   const [editingId, setEditingId] = useState(null);
   const [errors, setErrors] = useState({});
@@ -57,6 +63,10 @@ const AsociacionManagement = () => {
   const validateForm = () => {
     const newErrors = {};
     if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
+    if (!formData.direccion.trim()) newErrors.direccion = 'La dirección es requerida';
+    if (!formData.telefono.trim()) newErrors.telefono = 'El teléfono es requerido';
+    if (!formData.email.trim()) newErrors.email = 'El email es requerido';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Email inválido';
     if (formData.descripcion && formData.descripcion.length > 500) {
       newErrors.descripcion = 'Máximo 500 caracteres';
     }
@@ -97,6 +107,9 @@ const AsociacionManagement = () => {
     setFormData({
       nombre: asociacion.nombre,
       descripcion: asociacion.descripcion || '',
+      direccion: asociacion.direccion || '',
+      telefono: asociacion.telefono || '',
+      email: asociacion.email || '',
     });
     setErrors({});
   };
@@ -121,7 +134,10 @@ const AsociacionManagement = () => {
 
     setIsLoading(true);
     try {
-      await asignarConductor(token, asignacionForm);
+      await asignarConductor(token, {
+        conductor_id: parseInt(asignacionForm.conductor_id),
+        asociacion_id: parseInt(asignacionForm.asociacion_id)
+      });
       fetchAsociaciones();
       setAsignacionForm({ conductor_id: '', asociacion_id: '' });
     } catch (err) {
@@ -147,7 +163,13 @@ const AsociacionManagement = () => {
 
   const resetForm = () => {
     setEditingId(null);
-    setFormData({ nombre: '', descripcion: '' });
+    setFormData({
+      nombre: '',
+      descripcion: '',
+      direccion: '',
+      telefono: '',
+      email: '',
+    });
     setErrors({});
   };
 
@@ -230,6 +252,44 @@ const AsociacionManagement = () => {
                       rows="4"
                     />
                     {errors.descripcion && <p className="text-red-500 text-sm mt-1">{errors.descripcion}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                    <input
+                      type="text"
+                      name="direccion"
+                      value={formData.direccion}
+                      onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                      className={`w-full px-3 py-2 border ${errors.direccion ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors`}
+                      placeholder="Calle Principal 123"
+                    />
+                    {errors.direccion && <p className="text-red-500 text-sm mt-1">{errors.direccion}</p>}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                      <input
+                        type="text"
+                        name="telefono"
+                        value={formData.telefono}
+                        onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                        className={`w-full px-3 py-2 border ${errors.telefono ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors`}
+                        placeholder="123456789"
+                      />
+                      {errors.telefono && <p className="text-red-500 text-sm mt-1">{errors.telefono}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors`}
+                        placeholder="asociacion@example.com"
+                      />
+                      {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                    </div>
                   </div>
                   <div className="flex space-x-2">
                     <Button type="submit" disabled={isLoading} className="flex items-center space-x-2">

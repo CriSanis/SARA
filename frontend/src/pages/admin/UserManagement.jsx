@@ -65,6 +65,7 @@ const UserManagement = () => {
     try {
       const payload = { ...formData };
       if (!payload.password) delete payload.password; // Evitar enviar contraseña vacía al editar
+      if (payload.user_type !== 'driver') delete payload.licencia; // Solo enviar licencia si es driver
       if (editingId) {
         await updateUser(token, editingId, payload);
       } else {

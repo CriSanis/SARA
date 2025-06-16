@@ -67,8 +67,7 @@ const Nosotros = () => {
               </p>
               <p className="text-gray-600 mb-4">
                 Como residentes de El Alto, experimentamos de primera mano los desafíos de la 
-                movilidad urbana: rutas desorganizadas, tiempos de espera prolongados y falta 
-                de información en tiempo real para los usuarios.
+                movilidad urbana: tiempos de espera prolongados y falta de información en tiempo real para los usuarios.
               </p>
               <p className="text-gray-600">
                 Motivados por la necesidad de mejorar la calidad de vida de los alteños, 
@@ -112,7 +111,7 @@ const Nosotros = () => {
               <h3 className="text-2xl font-bold text-primary mb-4">Nuestra Misión</h3>
               <p className="text-gray-600">
                 Optimizar el sistema de transporte en El Alto mediante tecnología innovadora, 
-                mejorando la eficiencia de las rutas y la experiencia de los usuarios, mientras 
+                mejorando la eficiencia y la experiencia de los usuarios, mientras 
                 contribuimos al desarrollo sostenible de la ciudad.
               </p>
             </motion.div>
