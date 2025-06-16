@@ -1,6 +1,6 @@
-# S.A.R.A. - Sistema Ágil de Rutas y Asignaciones
+# S.A.R.A. - Sistema Ágil de Asignaciones
 
-Plataforma diseñada para optimizar el transporte y traslado de artículos en El Alto, Bolivia. Mejora la gestión de pedidos de mudanza y transporte, asignando rutas y conductores de manera eficiente.
+Sistema de gestión para empresas de mudanza y transporte, asignando conductores de manera eficiente.
 
 ## Estructura del Proyecto
 - **backend/**: Código del backend desarrollado con Laravel (PHP).
