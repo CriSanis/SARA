@@ -11,7 +11,7 @@ class Asociacion extends Model
 
     protected $table = 'asociaciones'; // Especificar el nombre exacto de la tabla
 
-    protected $fillable = ['nombre', 'descripcion'];
+    protected $fillable = ['nombre', 'descripcion', 'direccion', 'telefono', 'email'];
 
     public function conductores()
     {

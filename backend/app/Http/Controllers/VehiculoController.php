@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Vehiculo;
 use App\Models\Conductor;
 use Illuminate\Http\Request;
+use App\Traits\AdminAuthorization;
 
 /**
  * @OA\Tag(
@@ -14,6 +15,13 @@ use Illuminate\Http\Request;
  */
 class VehiculoController extends Controller
 {
+    use AdminAuthorization;
+
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
     /**
      * @OA\Get(
      *     path="/api/vehiculos",
@@ -39,6 +47,10 @@ class VehiculoController extends Controller
      */
     public function index()
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $vehiculos = Vehiculo::with('conductor.user')->get();
         return response()->json($vehiculos);
     }
@@ -80,6 +92,10 @@ class VehiculoController extends Controller
      */
     public function store(Request $request)
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $request->validate([
             'conductor_id' => 'required|exists:conductores,id',
             'marca' => 'required|string|max:255',
@@ -89,6 +105,8 @@ class VehiculoController extends Controller
         ]);
 
         $vehiculo = Vehiculo::create($request->all());
+        $this->auditAction('create', $vehiculo);
+
         return response()->json($vehiculo, 201);
     }
 
@@ -135,6 +153,10 @@ class VehiculoController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $vehiculo = Vehiculo::findOrFail($id);
 
         $request->validate([
@@ -145,8 +167,13 @@ class VehiculoController extends Controller
             'capacidad' => 'required|numeric|min:0.1',
         ]);
 
+        $oldData = $vehiculo->toArray();
         $vehiculo->update($request->all());
-        return response()->json($vehiculo);
+
+        $changes = array_diff_assoc($vehiculo->toArray(), $oldData);
+        $this->auditAction('update', $vehiculo, $changes);
+
+        return response()->json($vehiculo->load('conductor.user'));
     }
 
     /**
@@ -173,8 +200,14 @@ class VehiculoController extends Controller
      */
     public function destroy($id)
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $vehiculo = Vehiculo::findOrFail($id);
+        $this->auditAction('delete', $vehiculo);
         $vehiculo->delete();
+
         return response()->json(null, 204);
     }
 }

@@ -10,15 +10,34 @@ class Pedido extends Model
     use HasFactory;
 
     protected $fillable = [
-        'cliente_id', 'conductor_id', 'origen', 'origen_coordenadas', 'destino', 'destino_coordenadas',
-        'distancia_estimada_km', 'duracion_estimada_min', 'descripcion', 'estado',
+        'cliente_id',
+        'conductor_id',
+        'estado',
+        'fecha_entrega',
+        'direccion_origen',
+        'direccion_destino',
+        'descripcion',
+        'peso',
+        'imagenes',
+        'valor_asegurado',
+        'origen_lat',
+        'origen_lng',
+        'destino_lat',
+        'destino_lng',
+        'created_at'
     ];
 
     protected $casts = [
-        'origen_coordenadas' => 'array',
-        'destino_coordenadas' => 'array',
-        'distancia_estimada_km' => 'float',
-        'duracion_estimada_min' => 'integer',
+        'fecha_entrega' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'peso' => 'float',
+        'valor_asegurado' => 'float',
+        'imagenes' => 'array',
+        'origen_lat' => 'decimal:8',
+        'origen_lng' => 'decimal:8',
+        'destino_lat' => 'decimal:8',
+        'destino_lng' => 'decimal:8'
     ];
 
     public function cliente()
@@ -31,8 +50,8 @@ class Pedido extends Model
         return $this->belongsTo(Conductor::class);
     }
 
-    public function rutas()
+    public function seguimientos()
     {
-        return $this->belongsToMany(Ruta::class, 'pedido_ruta');
+        return $this->hasMany(Seguimiento::class);
     }
 }

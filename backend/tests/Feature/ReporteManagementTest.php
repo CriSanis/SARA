@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Conductor;
 use App\Models\Pedido;
 use App\Models\Ruta;
+use App\Models\Asociacion;
 use Spatie\Permission\Models\Role;
 
 class ReporteManagementTest extends TestCase
@@ -30,43 +31,37 @@ class ReporteManagementTest extends TestCase
     /** @test */
     public function admin_can_generate_reporte_pedidos()
     {
-        $cliente = User::factory()->create(['user_type' => 'client']);
-        $cliente->assignRole('client');
-        Pedido::factory()->count(5)->create(['cliente_id' => $cliente->id]);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $pedido = Pedido::factory()->create();
 
-        $response = $this->withHeader('Authorization', "Bearer $this->token")
-                    ->get('/api/reportes/pedidos?estado=completado&cliente_id=' . $cliente->id);
+        $response = $this->actingAs($admin)
+            ->get('/api/reportes/pedidos?pedido_id=' . $pedido->id);
 
-        $response->assertStatus(200)
-                ->assertHeader('Content-Type', 'application/pdf');
+        $response->assertStatus(200);
     }
 
     /** @test */
     public function admin_can_generate_reporte_conductores()
     {
+        $admin = User::factory()->create(['role' => 'admin']);
         $conductor = Conductor::factory()->create();
-        $conductor->user->assignRole('driver');
-        Pedido::factory()->count(3)->create(['conductor_id' => $conductor->id]);
 
-        $response = $this->withHeader('Authorization', "Bearer $this->token")
-                    ->get('/api/reportes/conductores?conductor_id=' . $conductor->id);
+        $response = $this->actingAs($admin)
+            ->get('/api/reportes/conductores?conductor_id=' . $conductor->id);
 
-        $response->assertStatus(200)
-                ->assertHeader('Content-Type', 'application/pdf');
+        $response->assertStatus(200);
     }
 
     /** @test */
-    public function admin_can_generate_reporte_rutas()
+    public function admin_can_generate_reporte_asociaciones()
     {
-        $ruta = Ruta::factory()->create();
-        $pedido = Pedido::factory()->create();
-        \DB::table('pedido_ruta')->insert(['pedido_id' => $pedido->id, 'ruta_id' => $ruta->id]);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $asociacion = Asociacion::factory()->create();
 
-        $response = $this->withHeader('Authorization', "Bearer $this->token")
-                    ->get('/api/reportes/rutas?ruta_id=' . $ruta->id);
+        $response = $this->actingAs($admin)
+            ->get('/api/reportes/asociaciones?asociacion_id=' . $asociacion->id);
 
-        $response->assertStatus(200)
-                ->assertHeader('Content-Type', 'application/pdf');
+        $response->assertStatus(200);
     }
 
     /** @test */

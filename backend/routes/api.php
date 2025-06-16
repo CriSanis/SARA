@@ -11,6 +11,7 @@ use App\Http\Controllers\RutaController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\AuditController;
+use App\Http\Controllers\SeguimientoController;
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {
@@ -37,13 +38,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/pedido-conductor', [PedidoController::class, 'asignarConductor']);
 
         Route::get('/rutas', [RutaController::class, 'index']);
-        Route::get('/rutas/{ruta}', [RutaController::class, 'show']);
+        Route::post('/rutas', [RutaController::class, 'store']);
+        Route::put('/rutas/{id}', [RutaController::class, 'update']);
+        Route::delete('/rutas/{id}', [RutaController::class, 'destroy']);
+        Route::post('/pedido-ruta', [RutaController::class, 'asignarRuta']);
+        Route::delete('/pedido-ruta/{id}', [RutaController::class, 'desasignarRuta']);
+        Route::get('/rutas/optimizar', [RutaController::class, 'optimizar']);
 
-        Route::get('/reportes/pedidos', [ReporteController::class, 'reportePedidos']);
-        Route::get('/reportes/conductores', [ReporteController::class, 'reporteConductores']);
-        Route::get('/reportes/rutas', [ReporteController::class, 'reporteRutas']);
+        Route::get('/reportes/pedidos', [ReporteController::class, 'reportePedidos'])->middleware('role:admin');
+        Route::get('/reportes/conductores', [ReporteController::class, 'reporteConductores'])->middleware('role:admin');
+        Route::get('/reportes/rutas', [ReporteController::class, 'reporteRutas'])->middleware('role:admin');
 
         Route::get('/audits', [AuditController::class, 'index']);
+        Route::get('/audits/model/{model}', [AuditController::class, 'getByModel']);
+        Route::get('/audits/user/{userId}', [AuditController::class, 'getByUser']);
+        Route::get('/audits/action/{action}', [AuditController::class, 'getByAction']);
     });
 
     Route::middleware(['role:admin|driver|client'])->group(function () {
@@ -54,18 +63,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/pedidos/{id}', [PedidoController::class, 'destroy']);
         Route::get('/notificaciones', [NotificacionController::class, 'index']);
         Route::post('/notificaciones/{id}/marcar-leida', [NotificacionController::class, 'marcarLeida']);
+        Route::get('/seguimientos/{pedido_id}', [SeguimientoController::class, 'index'])->middleware('permission:view-seguimientos');
     });
 
-    Route::middleware(['role:driver'])->get('/rutas', [RutaController::class, 'index']);
-});
+    Route::middleware(['role:driver'])->group(function () {
+        Route::get('/rutas', [RutaController::class, 'index']);
+        Route::post('/seguimientos', [SeguimientoController::class, 'store'])->middleware('permission:update-seguimientos');
+    });
 
-Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-    Route::post('/rutas', [RutaController::class, 'store']);
-    Route::put('/rutas/{ruta}', [RutaController::class, 'update']);
-    Route::delete('/rutas/{ruta}', [RutaController::class, 'destroy']);
-    Route::post('/rutas/optimizar', [RutaController::class, 'optimizar']);
-    Route::post('/pedido-ruta', [RutaController::class, 'asignarRuta']);
-    Route::delete('/pedido-ruta/{pedido}', [RutaController::class, 'desasignarRuta']);
+    // Rutas de notificaciones
+    Route::get('/notifications', [NotificacionController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificacionController::class, 'marcarComoLeida']);
+    Route::post('/notifications/read-all', [NotificacionController::class, 'marcarTodasComoLeidas']);
 });
 
 Route::post('/register', [AuthController::class, 'register']);

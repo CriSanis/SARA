@@ -11,12 +11,16 @@ class PedidoFactory extends Factory
     public function definition(): array
     {
         return [
-            'cliente_id' => User::factory()->create(['user_type' => 'client']),
-            'conductor_id' => null,
-            'origen' => $this->faker->city,
-            'destino' => $this->faker->city,
+            'cliente_id' => User::factory(),
+            'conductor_id' => Conductor::factory(),
+            'estado' => 'pending',
+            'fecha_entrega' => now()->addDays(2),
+            'direccion_origen' => $this->faker->address,
+            'direccion_destino' => $this->faker->address,
             'descripcion' => $this->faker->sentence,
-            'estado' => 'pendiente',
+            'peso' => $this->faker->randomFloat(2, 1, 1000),
+            'dimensiones' => '100x50x30',
+            'valor_asegurado' => $this->faker->randomFloat(2, 100, 10000),
         ];
     }
 }

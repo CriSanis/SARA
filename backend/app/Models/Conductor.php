@@ -9,7 +9,7 @@ class Conductor extends Model
 {
     use HasFactory;
 
-    protected $table = 'conductores'; // Especificar explícitamente
+    protected $table = 'conductores';
 
     protected $fillable = ['user_id', 'licencia', 'estado_verificacion'];
 
@@ -27,8 +27,14 @@ class Conductor extends Model
     {
         return $this->belongsToMany(Asociacion::class, 'asociacion_conductores', 'conductor_id', 'asociacion_id');
     }
+
     public function pedidos()
     {
-        return $this->hasMany(Pedido::class, 'conductor_id');
+        return $this->hasMany(Pedido::class);
+    }
+
+    public function seguimientos()
+    {
+        return $this->hasMany(Seguimiento::class);
     }
 }

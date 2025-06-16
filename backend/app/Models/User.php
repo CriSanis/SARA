@@ -20,7 +20,17 @@ class User extends Authenticatable
         'password', 'remember_token',
     ];
 
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
     public function conductor(){
         return $this->hasOne(Conductor::class); //se agregan estas lineas para incluir la relacion conductor
+    }
+
+    public function pedidos()
+    {
+        return $this->hasMany(Pedido::class, 'cliente_id');
     }
 }

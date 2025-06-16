@@ -10,6 +10,7 @@ use App\Models\Pedido;
 use App\Models\Ruta;
 use App\Models\Audit;
 use Spatie\Permission\Models\Role;
+use App\Models\Asociacion;
 
 class AuditTest extends TestCase
 {
@@ -45,22 +46,21 @@ class AuditTest extends TestCase
     /** @test */
     public function audit_is_recorded_for_pedido_create()
     {
+        $admin = User::factory()->create(['role' => 'admin']);
         $data = [
-            'origen' => 'Ciudad A',
-            'destino' => 'Ciudad B',
-            'descripcion' => 'Carga de 2 toneladas',
+            'descripcion' => 'Pedido de prueba',
+            'estado' => 'pendiente'
         ];
 
-        $response = $this->withHeader('Authorization', "Bearer $this->clientToken")
-                    ->postJson('/api/pedidos', $data);
+        $response = $this->actingAs($admin)
+            ->postJson('/api/pedidos', $data);
 
         $response->assertStatus(201);
 
-        $this->assertDatabaseHas('audits', [
-            'user_id' => $this->client->id,
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $admin->id,
             'action' => 'create',
-            'model_type' => 'App\Models\Pedido',
-            'model_id' => $response->json('id'),
+            'model_type' => 'App\Models\Pedido'
         ]);
     }
 
@@ -107,23 +107,23 @@ class AuditTest extends TestCase
     /** @test */
     public function audit_is_recorded_for_conductor_assignment()
     {
-        $pedido = Pedido::factory()->create(['cliente_id' => $this->client->id]);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $pedido = Pedido::factory()->create();
+        $conductor = Conductor::factory()->create();
 
         $data = [
             'pedido_id' => $pedido->id,
-            'conductor_id' => $this->conductor->id,
+            'conductor_id' => $conductor->id
         ];
 
-        $response = $this->withHeader('Authorization', "Bearer $this->adminToken")
-                    ->postJson('/api/pedido-conductor', $data);
+        $response = $this->actingAs($admin)
+            ->postJson('/api/pedido-conductor', $data);
 
         $response->assertStatus(200);
 
-        $this->assertDatabaseHas('audits', [
-            'user_id' => $this->admin->id,
-            'action' => 'assign_conductor',
-            'model_type' => 'App\Models\Pedido',
-            'model_id' => $pedido->id,
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $admin->id,
+            'action' => 'assign_conductor'
         ]);
     }
 

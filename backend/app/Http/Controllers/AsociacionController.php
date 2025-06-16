@@ -6,6 +6,8 @@ use App\Models\Asociacion;
 use App\Models\Conductor;
 use App\Models\AsociacionConductor;
 use Illuminate\Http\Request;
+use App\Traits\AdminAuthorization;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
@@ -15,6 +17,13 @@ use Illuminate\Http\Request;
  */
 class AsociacionController extends Controller
 {
+    use AdminAuthorization;
+
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
     /**
      * @OA\Get(
      *     path="/api/asociaciones",
@@ -37,6 +46,10 @@ class AsociacionController extends Controller
      */
     public function index()
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $asociaciones = Asociacion::with('conductores.user')->get();
         return response()->json($asociaciones);
     }
@@ -72,12 +85,21 @@ class AsociacionController extends Controller
      */
     public function store(Request $request)
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $request->validate([
             'nombre' => 'required|string|max:255|unique:asociaciones,nombre',
             'descripcion' => 'nullable|string',
+            'direccion' => 'required|string|max:255',
+            'telefono' => 'required|string|max:20',
+            'email' => 'required|email|max:255',
         ]);
 
         $asociacion = Asociacion::create($request->all());
+        $this->auditAction('create', $asociacion);
+
         return response()->json($asociacion, 201);
     }
 
@@ -118,14 +140,26 @@ class AsociacionController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $asociacion = Asociacion::findOrFail($id);
 
         $request->validate([
             'nombre' => 'required|string|max:255|unique:asociaciones,nombre,' . $id,
             'descripcion' => 'nullable|string',
+            'direccion' => 'required|string|max:255',
+            'telefono' => 'required|string|max:20',
+            'email' => 'required|email|max:255',
         ]);
 
+        $oldData = $asociacion->toArray();
         $asociacion->update($request->all());
+
+        $changes = array_diff_assoc($asociacion->toArray(), $oldData);
+        $this->auditAction('update', $asociacion, $changes);
+
         return response()->json($asociacion);
     }
 
@@ -153,8 +187,14 @@ class AsociacionController extends Controller
      */
     public function destroy($id)
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $asociacion = Asociacion::findOrFail($id);
+        $this->auditAction('delete', $asociacion);
         $asociacion->delete();
+
         return response()->json(null, 204);
     }
 
@@ -189,6 +229,11 @@ class AsociacionController extends Controller
      */
     public function asignarConductor(Request $request)
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
+        try {
         $request->validate([
             'conductor_id' => 'required|exists:conductores,id',
             'asociacion_id' => 'required|exists:asociaciones,id',
@@ -202,8 +247,17 @@ class AsociacionController extends Controller
             return response()->json(['message' => 'Conductor ya asignado a esta asociación'], 422);
         }
 
-        $asignacion = AsociacionConductor::create($request->all());
+            $asignacion = AsociacionConductor::create([
+                'conductor_id' => $request->conductor_id,
+                'asociacion_id' => $request->asociacion_id
+            ]);
+
         return response()->json($asignacion, 201);
+        } catch (\Exception $e) {
+            Log::error('Error al asignar conductor: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            return response()->json(['message' => 'Error al asignar conductor: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -230,8 +284,14 @@ class AsociacionController extends Controller
      */
     public function desasignarConductor($id)
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $asignacion = AsociacionConductor::findOrFail($id);
+        $this->auditAction('unassign_driver', $asignacion->asociacion, ['conductor_id' => $asignacion->conductor_id]);
         $asignacion->delete();
+
         return response()->json(null, 204);
     }
 }

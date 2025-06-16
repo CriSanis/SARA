@@ -10,29 +10,28 @@ class PermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Crear permisos
+        // Crear roles
+        $admin = Role::create(['name' => 'admin']);
+        $driver = Role::create(['name' => 'driver']);
+        $client = Role::create(['name' => 'client']);
+
+        // Definir permisos y sus asignaciones
         $permissions = [
-            'create-pedidos',
-            'view-pedidos',
-            'view-asignaciones',
-            'update-pedidos',
-            'manage-users',
-            'verify-conductores',
-            'manage-asociaciones',
+            'create-pedidos' => ['admin', 'client'],
+            'view-pedidos' => ['admin', 'driver', 'client'],
+            'update-pedidos' => ['admin'],
+            'delete-pedidos' => ['admin'],
+            'view-notificaciones' => ['admin', 'driver', 'client'],
+            'update-seguimientos' => ['driver'],
+            'view-seguimientos' => ['admin', 'driver', 'client'],
         ];
 
-        foreach ($permissions as $permission) {
+        // Crear y asignar permisos
+        foreach ($permissions as $permission => $roles) {
             Permission::create(['name' => $permission]);
+            foreach ($roles as $role) {
+                Role::findByName($role)->givePermissionTo($permission);
+            }
         }
-
-        // Crear roles y asignar permisos
-        $adminRole = Role::create(['name' => 'admin']);
-        $driverRole = Role::create(['name' => 'driver']);
-        $clientRole = Role::create(['name' => 'client']);
-
-        // Asignar permisos a roles
-        $adminRole->syncPermissions($permissions); // Admin tiene todos los permisos
-        $driverRole->syncPermissions(['view-asignaciones', 'update-pedidos']);
-        $clientRole->syncPermissions(['create-pedidos', 'view-pedidos']);
     }
 }

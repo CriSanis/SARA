@@ -3,54 +3,80 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\User;
 use App\Models\Conductor;
 use App\Models\Vehiculo;
 use App\Models\Asociacion;
-use App\Models\AsociacionConductor;
-use App\Models\User;
 use App\Models\Pedido;
 use App\Models\Ruta;
+use App\Models\Seguimiento;
+use Illuminate\Support\Facades\Hash;
 
 class TransporteSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::factory()->create([
+        // Crear usuario administrador
+        $admin = User::create([
             'name' => 'Admin',
-            'email' => 'admin@sara.com',
-            'user_type' => 'admin',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('password'),
+            'user_type' => 'admin'
         ]);
         $admin->assignRole('admin');
 
-        $client = User::factory()->create([
-            'name' => 'Cliente',
-            'email' => 'cliente@sara.com',
-            'user_type' => 'client',
+        // Crear usuario conductor
+        $conductor = User::create([
+            'name' => 'Conductor',
+            'email' => 'conductor@example.com',
+            'password' => Hash::make('password'),
+            'user_type' => 'driver'
         ]);
-        $client->assignRole('client');
+        $conductor->assignRole('driver');
 
-        $asociaciones = Asociacion::factory()->count(5)->create();
+        // Crear conductor
+        $conductorModel = Conductor::create([
+            'user_id' => $conductor->id,
+            'licencia' => 'LIC123',
+            'estado_verificacion' => 'verificado'
+        ]);
 
-        $conductores = Conductor::factory()->count(10)->create();
+        // Crear vehículo
+        $vehiculo = Vehiculo::create([
+            'conductor_id' => $conductorModel->id,
+            'placa' => 'ABC123',
+            'modelo' => 'Toyota',
+            'marca' => 'Corolla',
+            'capacidad' => 1000
+        ]);
 
-        foreach ($conductores as $conductor) {
-            $conductor->user->assignRole('driver');
-            Vehiculo::factory()->create(['conductor_id' => $conductor->id]);
-            AsociacionConductor::factory()->create([
-                'conductor_id' => $conductor->id,
-                'asociacion_id' => $asociaciones->random()->id,
-            ]);
-        }
+        // Crear asociación
+        $asociacion = Asociacion::create([
+            'nombre' => 'Asociación de Transporte',
+            'direccion' => 'Calle Principal 123',
+            'telefono' => '123456789',
+            'email' => 'asociacion@example.com'
+        ]);
 
-        $pedidos = Pedido::factory()->count(10)->create(['cliente_id' => $client->id]);
+        // Asignar conductor a asociación
+        $asociacion->conductores()->attach($conductorModel->id);
 
-        $rutas = Ruta::factory()->count(5)->create();
-
-        foreach ($pedidos as $pedido) {
-            $pedido->rutas()->attach($rutas->random()->id, [
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
+        // Crear pedido de prueba
+        Pedido::create([
+            'cliente_id' => $admin->id,
+            'conductor_id' => $conductorModel->id,
+            'descripcion' => 'Pedido de prueba',
+            'estado' => 'pendiente',
+            'fecha_entrega' => now()->addDays(2),
+            'direccion_origen' => 'Av. Principal 123, Ciudad A',
+            'direccion_destino' => 'Calle Secundaria 456, Ciudad B',
+            'peso' => 500,
+            'valor_asegurado' => 1000,
+            'origen_lat' => -16.5,
+            'origen_lng' => -68.15,
+            'destino_lat' => -16.6,
+            'destino_lng' => -68.2,
+            'imagenes' => null
+        ]);
     }
 }

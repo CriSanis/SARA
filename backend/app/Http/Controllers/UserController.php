@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+use App\Traits\AdminAuthorization;
 
 /**
  * @OA\Tag(
@@ -15,6 +16,13 @@ use Spatie\Permission\Models\Role;
  */
 class UserController extends Controller
 {
+    use AdminAuthorization;
+
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
     /**
      * @OA\Get(
      *     path="/api/users",
@@ -40,11 +48,15 @@ class UserController extends Controller
      *     )
      * )
      */
-   public function index()
-{
-    $users = User::with(['roles', 'conductor'])->get(); //se añade conductores
-    return response()->json($users);
-}
+    public function index()
+    {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
+        $users = User::with(['roles', 'conductor'])->get();
+        return response()->json($users);
+    }
 
     /**
      * @OA\Post(
@@ -82,13 +94,17 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'phone' => 'nullable|string|max:20',
             'user_type' => 'required|in:client,driver,admin',
-            'licencia' => 'required_if:user_type,driver|string|unique:conductores,licencia', // Corregido
+            'licencia' => 'required_if:user_type,driver|string|unique:conductores,licencia',
         ]);
 
         $user = User::create([
@@ -107,6 +123,8 @@ class UserController extends Controller
                 'estado_verificacion' => 'pendiente',
             ]);
         }
+
+        $this->auditAction('create', $user);
 
         return response()->json($user, 201);
     }
@@ -141,6 +159,10 @@ class UserController extends Controller
      */
     public function show($id)
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $user = User::with('roles')->findOrFail($id);
         return response()->json($user);
     }
@@ -185,6 +207,10 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $user = User::findOrFail($id);
 
         $request->validate([
@@ -192,9 +218,10 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
             'phone' => 'nullable|string|max:20',
             'user_type' => 'required|in:client,driver,admin',
-            'licencia' => 'required_if:user_type,driver|string|unique:conductores,licencia,' . ($user->conductor ? $user->conductor->id : 0), // Corregido
+            'licencia' => 'required_if:user_type,driver|string|unique:conductores,licencia,' . ($user->conductor ? $user->conductor->id : 0),
         ]);
 
+        $oldData = $user->toArray();
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
@@ -202,16 +229,15 @@ class UserController extends Controller
             'user_type' => $request->user_type,
         ]);
 
-        $user->syncRoles($request->user_type);
-
-        if ($request->user_type === 'driver') {
-            $user->conductor()->updateOrCreate(
-                ['user_id' => $user->id],
-                ['licencia' => $request->licencia, 'estado_verificacion' => 'pendiente']
-            );
-        } else {
-            $user->conductor()->delete();
+        if ($request->user_type === 'driver' && !$user->conductor) {
+            $user->conductor()->create([
+                'licencia' => $request->licencia,
+                'estado_verificacion' => 'pendiente',
+            ]);
         }
+
+        $changes = array_diff_assoc($user->toArray(), $oldData);
+        $this->auditAction('update', $user, $changes);
 
         return response()->json($user);
     }
@@ -240,8 +266,14 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
+        if ($error = $this->checkAdminRole()) {
+            return $error;
+        }
+
         $user = User::findOrFail($id);
+        $this->auditAction('delete', $user);
         $user->delete();
+
         return response()->json(null, 204);
     }
 }

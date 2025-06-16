@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Audit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
@@ -54,19 +55,28 @@ class AuditController extends Controller
      */
     public function index(Request $request)
     {
+        Log::info('Parámetros recibidos:', $request->all());
+
         $query = Audit::with('user');
 
-        if ($request->action) {
+        if ($request->has('action') && $request->action !== '') {
+            Log::info('Filtrando por acción:', ['action' => $request->action]);
             $query->where('action', $request->action);
         }
-        if ($request->model_type) {
+
+        if ($request->has('model_type') && $request->model_type !== '') {
+            Log::info('Filtrando por modelo:', ['model_type' => $request->model_type]);
             $query->where('model_type', $request->model_type);
         }
-        if ($request->user_id) {
+
+        if ($request->has('user_id') && $request->user_id !== '') {
+            Log::info('Filtrando por usuario:', ['user_id' => $request->user_id]);
             $query->where('user_id', $request->user_id);
         }
 
         $audits = $query->orderBy('created_at', 'desc')->get();
+        Log::info('Registros encontrados:', ['count' => $audits->count()]);
+
         return response()->json($audits);
     }
 
@@ -90,8 +100,9 @@ class AuditController extends Controller
      */
     public function getByModel($model)
     {
+        $decodedModel = urldecode($model);
         $audits = Audit::with('user')
-            ->where('model_type', $model)
+            ->where('model_type', $decodedModel)
             ->orderBy('created_at', 'desc')
             ->get();
         return response()->json($audits);

@@ -10,11 +10,11 @@ use Spatie\Permission\Models\Role;
 
 /**
  * @OA\Info(
- *     title="S.A.R.A. API",
  *     version="1.0.0",
- *     description="API para el Sistema Ágil de Rutas y Asignaciones",
+ *     title="S.A.R.A. API",
+ *     description="API para el Sistema Ágil de Asignaciones",
  *     @OA\Contact(
- *         email="support@sara.com"
+ *         email="admin@sara.com"
  *     )
  * )
  */
